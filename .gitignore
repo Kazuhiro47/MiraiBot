@@ -1,0 +1,13 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/
+Mirai_Bot.bat
+bot_data.js
+commands/code.js
+*.rdp
+mirai_bot.json
+node_modules/
+package-lock.json
+package.json
+restart_Mirai_Bot.bat
+run_Mirai_Bot.bat
+stop_Mirai_Bot.bat
