@@ -3,7 +3,7 @@ const write_to_file = require("../functions/write_json").write_to_file;
 
 exports.run = (client, message) => {
 
-    let fs = require('fs');
+    let fs = require('graceful-fs');
     const command = message.content.slice('trad '.length, message.content.length).trim().split(/ +/g);
     console.log('Launching trad command.');
 
@@ -76,7 +76,7 @@ exports.run = (client, message) => {
 
             let path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
 
-            message.channel.send("Analyse de plus de 60 000 fichiers en 30 secondes... Le bot est indisponible pendant ce laps de temps.").then((msg) => {
+            message.channel.send("Analyse des fichiers en cours...").then((msg) => {
 
                 fs.readdir(path, "utf8", (err, files) => {
                     if (err) {
@@ -87,6 +87,7 @@ exports.run = (client, message) => {
 
                     let global = 0;
                     let global_total = 0;
+                    let progressInt = 50;
 
                     let part = {
                         "System Text": [0, 0],
@@ -106,23 +107,17 @@ exports.run = (client, message) => {
                         "Danganronpa IF": [0, 0]
                     };
 
-                    let last_directory = files.length;
-                    let total_files = 0;
-                    let totaldir_it = 0;
-                    let progressInt = 20;
-
-                    console.log(last_directory);
+                    let progress_messages = [];
 
                     function print_translation_status() {
                         let avancement = new Discord.RichEmbed();
 
                         msg.delete().catch(console.error);
 
-                        console.log("ANALYSE COMPLETE2");
                         avancement.setColor(message.guild.me.displayColor);
                         avancement.setDescription("Avancement de la traduction sur Super Danganronpa 2");
                         avancement.setTitle("Super Danganronpa 2");
-                        avancement.setImage("https://image.noelshack.com/fichiers/2018/05/5/1517611222-unknown.png");
+                        avancement.setImage("https://caneandrinse.com/wp-content/uploads/2017/05/tropicalisland2.jpg");
 
                         let percentage;
                         Object.keys(part).forEach(single_part => {
@@ -133,13 +128,32 @@ exports.run = (client, message) => {
                         percentage = (Math.round((global / global_total * 100) * 100) / 100).toFixed(2);
                         avancement.addField(`**Avancement global**`, `${global} / ${global_total} répliques (**${percentage}%**)`);
 
-                        message.channel.send(avancement);
+                        message.channel.send(avancement).catch(console.error);
+
+                        progress_messages.forEach(msg => {
+                            msg.delete().catch(console.error);
+                        });
                     }
 
+                    function print_progress() {
+                        let percentage = (Math.round((global / global_total * 100) * 100) / 100).toFixed(2);
+                        if (percentage > progressInt && percentage < progressInt + 20) {
+                            message.channel.send(`${progressInt}% des fichiers analysés`).then(msg => {
+                                progress_messages.push(msg);
+                            }).catch(console.error);
+                            progressInt += 50;
+                        }
+                    }
+
+                    let pending = 0;
                     files.forEach(file_dir => {
+                        pending += 1;
                         fs.readdir(path + '/' + file_dir, "utf8", (err, files) => {
 
-                            if (err) return;
+                            if (err) {
+                                pending -= 1;
+                                return;
+                            }
 
                             let section = [0, 0];
 
@@ -190,100 +204,116 @@ exports.run = (client, message) => {
                                 //console.log(`dir : ${file_dir} = Danganronpa IF`);
                             }
 
-                            let last_file1 = files.length;
-                            total_files += files.length - 1;
-                            let last_file_iterator = 0;
                             files.forEach(txt_file => {
 
                                 if (txt_file.endsWith(".txt")) {
 
+                                    pending += 1;
+                                    fs.readFile(path + '/' + file_dir + '/' + txt_file, "utf8", (err, data) => {
 
-                                    let data;
-                                    try {
-                                        data = fs.readFileSync(path + '/' + file_dir + '/' + txt_file, 'utf8');
-                                    } catch (err) {
-                                        try {
-                                            data = fs.readFileSync(path + '/' + file_dir + '/' + txt_file, 'utf16le');
-                                        } catch (err2) {
-                                            console.log(`Couldn't read ${txt_file}`);
+                                        if (err) {
+                                            pending += 1;
+                                            fs.readFile(path + '/' + file_dir + '/' + txt_file, "utf8", (err, data) => {
+                                                if (err) {
+                                                    pending -= 1;
+                                                    return;
+                                                }
+                                                if (data === undefined) {
+                                                    console.log(`Couldn't read ${txt_file}`);
+                                                    pending -= 1;
+                                                    return;
+                                                }
+                                                if (data.includes(`<text lang="en">`)) {
+                                                    section[0] += 1;
+                                                    global += 1;
+                                                }
+                                                section[1] += 1;
+                                                global_total += 1;
+                                                pending -= 1;
+                                                print_progress();
+                                                if (pending === 0)
+                                                    return print_translation_status();
+                                            });
+                                            pending -= 1;
                                             return;
                                         }
-                                    }
-
-                                    if (data === undefined) {
-                                        console.log(`Couldn't read ${txt_file}`);
-                                        return;
-                                    }
-
-                                    if (data.includes(`<text lang="en">`)) {
-                                        section[0] += 1;
-                                        global += 1;
-                                    }
-                                    section[1] += 1;
-                                    global_total += 1;
-                                    last_file_iterator += 1;
-
-                                    if (global_total === total_files && totaldir_it === last_directory) {
-                                        console.log(`last_file_it ${totaldir_it} === last_directory ${last_directory}`);
-                                        console.log(`last_file_iterator ${last_file_iterator} === last_file1 ${last_file1}`);
-                                        return print_translation_status();
-                                    }
+                                        if (data === undefined) {
+                                            console.log(`Couldn't read ${txt_file}`);
+                                            pending -= 1;
+                                            return;
+                                        }
+                                        if (data.includes(`<text lang="en">`)) {
+                                            section[0] += 1;
+                                            global += 1;
+                                        }
+                                        section[1] += 1;
+                                        global_total += 1;
+                                        pending -= 1;
+                                        print_progress();
+                                        if (pending === 0)
+                                            return print_translation_status();
+                                    });
 
                                 } else if (txt_file.startsWith("script_pak_")) {
-
+                                    pending += 1;
                                     fs.readdir(path + '/' + file_dir + '/' + txt_file, 'utf8', (err, files) => {
 
-                                        if (err) return;
-
-                                        function analyse_fil_is_done(data) {
-                                            if (data === undefined) {
-                                                console.log(`Couldn't read ${txt_file}`);
-                                                return;
-                                            }
-
-                                            if (data.includes(`<text lang="en">`)) {
-                                                section[0] += 1;
-                                                global += 1;
-                                            }
-                                            section[1] += 1;
-                                            global_total += 1;
-                                            last_file_iterator += 1;
-
-                                            if (global_total === total_files - 124 && totaldir_it === last_directory) {
-                                                console.log(`last_file_it ${totaldir_it} === last_directory ${last_directory}`);
-                                                console.log(`last_file_iterator ${last_file_iterator} === last_file1 ${last_file1}`);
-                                                return true;
-                                            }
-                                            return false;
+                                        if (err) {
+                                            pending -= 1;
+                                            return;
                                         }
 
-                                        let last_file1 = files.length;
-                                        total_files -= 1;
-                                        total_files += files.length;
-                                        let last_file_iterator = 0;
                                         files.forEach(text_file => {
-
+                                            pending += 1;
                                             fs.readFile(path + '/' + file_dir + '/' + txt_file + '/' + text_file, 'utf8', (err, data) => {
 
                                                 if (err) {
-                                                    fs.readdir(path + '/' + file_dir + '/' + txt_file + '/' + text_file, 'utf16le', (err, data) => {
-                                                        if (err) return;
-
-                                                        if (analyse_fil_is_done(data))
+                                                    fs.readFile(path + '/' + file_dir + '/' + txt_file + '/' + text_file, 'utf16le', (err, data) => {
+                                                        if (err) {
+                                                            console.error(err);
+                                                            pending -= 1;
+                                                            return;
+                                                        }
+                                                        if (data === undefined) {
+                                                            console.log(`Couldn't read ${txt_file}`);
+                                                            pending -= 1;
+                                                            return;
+                                                        }
+                                                        if (data.includes(`<text lang="en">`)) {
+                                                            section[0] += 1;
+                                                            global += 1;
+                                                        }
+                                                        section[1] += 1;
+                                                        global_total += 1;
+                                                        pending -= 1;
+                                                        print_progress();
+                                                        if (pending === 0)
                                                             return print_translation_status();
-
                                                     });
                                                     return;
                                                 }
-
-                                                if (analyse_fil_is_done(data))
+                                                if (data === undefined) {
+                                                    console.log(`Couldn't read ${txt_file}`);
+                                                    pending -= 1;
+                                                    return;
+                                                }
+                                                if (data.includes(`<text lang="en">`)) {
+                                                    section[0] += 1;
+                                                    global += 1;
+                                                }
+                                                section[1] += 1;
+                                                global_total += 1;
+                                                pending -= 1;
+                                                print_progress();
+                                                if (pending === 0)
                                                     return print_translation_status();
                                             });
                                         });
+                                        pending -= 1;
                                     });
                                 }
                             });
-                            totaldir_it += 1;
+                            pending -= 1;
                         });
                     });
                 });
