@@ -56,46 +56,88 @@ let find_interval = setInterval(function () {
     let seconds = date.getSeconds();
 
     if (UTCseconds === 0 || seconds === 0) {
-        console.log("Interval found");
-        set_real_interval();
+        console.log("Minute interval found");
+        set_minute_interval();
     }
 
 }, 1000);
 
-function set_real_interval() {
+let minute_interval;
+
+function set_minute_interval() {
     clearInterval(find_interval);
-    setInterval(function () {
+    check_birthday();
+    minute_interval = setInterval(function () {
+
         let date = new Date();
-        const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
-        const fileName = 'mirai_bot.json';
-        let day = date.getDate() + 1;
-        let month = date.getMonth() + 1;
+        let UTCminute = date.getUTCMinutes();
+        let minute = date.getMinutes();
 
-        if ((date.getHours() === 0 && date.getMinutes() === 0) || ((date.getUTCHours() + 1) % 24 === 0 && date.getUTCMinutes() === 0)) {
-            if (!fs.existsSync(fileName)) {
-                console.error("Aucun anniversaire enregistré.");
-            } else {
-
-                fs.readFile(fileName, 'utf8', (err, data) => {
-                    if (err) {
-                        console.error(err);
-                        console.error("Le fichier n'a pas pu être ouvert.");
-                    } else {
-                        let obj = JSON.parse(data);
-
-                        obj.anniversaires.forEach(birthDay => {
-                            if (birthDay.day === day && birthDay.month === month) {
-                                generalChannelMiraiTeam.send(`C'est l'anniversaire de <@${birthDay.id}> !`);
-                            }
-                        });
-
-                    }
-                });
-
-            }
+        if (UTCminute === 0 || minute === 0) {
+            console.log("Hour interval found");
+            set_hour_interval();
         }
 
     }, 60000);
+}
+
+let hour_interval;
+
+function set_hour_interval() {
+    clearInterval(minute_interval);
+    check_birthday();
+    hour_interval = setInterval(function () {
+
+        let date = new Date();
+        let UTChour = date.getUTCHours();
+        let hour = date.getHours();
+
+        if (UTChour === 0 || hour === 0) {
+            console.log("Day interval found");
+            set_day_interval();
+        }
+
+    }, 60000 * 60);
+}
+
+function set_day_interval() {
+    clearInterval(hour_interval);
+    check_birthday();
+    setInterval(function () {
+        check_birthday();
+    }, 60000 * 60 * 24);
+}
+
+function check_birthday() {
+    let date = new Date();
+    const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
+    const fileName = 'mirai_bot.json';
+    let day = date.getDate() + 1;
+    let month = date.getMonth() + 1;
+
+    if (((date.getUTCHours() + 1) % 24 === 0 && date.getUTCMinutes() === 0)) {
+        if (!fs.existsSync(fileName)) {
+            console.error("Aucun anniversaire enregistré.");
+        } else {
+
+            fs.readFile(fileName, 'utf8', (err, data) => {
+                if (err) {
+                    console.error(err);
+                    console.error("Le fichier n'a pas pu être ouvert.");
+                } else {
+                    let obj = JSON.parse(data);
+
+                    obj.anniversaires.forEach(birthDay => {
+                        if (birthDay.day === day && birthDay.month === month) {
+                            generalChannelMiraiTeam.send(`C'est l'anniversaire de <@${birthDay.id}> !`);
+                        }
+                    });
+
+                }
+            });
+
+        }
+    }
 }
 
 /*let ncp = require('ncp').ncp;
