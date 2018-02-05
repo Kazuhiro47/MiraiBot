@@ -3,7 +3,7 @@ const bot_data = require('./bot_data.js');
 const client = new Discord.Client();
 
 // file stream import
-const fs = require('fs');
+const fs = require('graceful-fs');
 const check_message = require("./functions/parsing_functions").check_message;
 
 
@@ -17,11 +17,11 @@ client.on('message', message => {
 
     check_message(message);
 
-    if (!message.content.startsWith(bot_data.bot_values['bot_prefix'])) return;
+    if (!message.content.startsWith(bot_data.bot_values.bot_prefix)) return;
 
     let date = new Date();
 
-    const args = message.content.slice(bot_data.bot_values['bot_prefix'].length).trim().split(/ +/g);
+    const args = message.content.slice(bot_data.bot_values.bot_prefix.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
 
     console.log(`Command: ${command}`);
@@ -168,4 +168,4 @@ net.createServer((socket) => {
 
 
 // Login
-client.login(bot_data.bot_values['bot_token']).then(() => console.log('Logged in')).catch(console.error);
+client.login(bot_data.bot_values.bot_token).then(() => console.log('Logged in')).catch(console.error);

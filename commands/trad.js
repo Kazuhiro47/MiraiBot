@@ -1,4 +1,9 @@
 const Discord = require('discord.js');
+const existsSync = require("graceful-fs");
+const get_file_data = require("../functions/dropbox").get_file_data;
+const RichEmbed = require("discord.js").RichEmbed;
+const get_revisions = require("../functions/dropbox").get_revisions;
+const get_random_index = require("../functions/parsing_functions").get_random_index;
 const write_to_file = require("../functions/write_json").write_to_file;
 
 exports.run = (client, message) => {
@@ -72,9 +77,8 @@ exports.run = (client, message) => {
 
         }
 
+        const path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
         if (cleaned_command === "avancement" || cleaned_command.startsWith("avan")) {
-
-            let path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
 
             message.channel.send("Analyse des fichiers en cours...").then((msg) => {
 
@@ -109,7 +113,7 @@ exports.run = (client, message) => {
 
                     let progress_messages = [];
 
-                    function print_translation_status() {
+                    function print_translation_status(part) {
                         let avancement = new Discord.RichEmbed();
 
                         msg.delete().catch(console.error);
@@ -209,34 +213,7 @@ exports.run = (client, message) => {
                                 if (txt_file.endsWith(".txt")) {
 
                                     pending += 1;
-                                    fs.readFile(path + '/' + file_dir + '/' + txt_file, "utf8", (err, data) => {
-
-                                        if (err) {
-                                            pending += 1;
-                                            fs.readFile(path + '/' + file_dir + '/' + txt_file, "utf8", (err, data) => {
-                                                if (err) {
-                                                    pending -= 1;
-                                                    return;
-                                                }
-                                                if (data === undefined) {
-                                                    console.log(`Couldn't read ${txt_file}`);
-                                                    pending -= 1;
-                                                    return;
-                                                }
-                                                if (data.includes(`<text lang="en">`)) {
-                                                    section[0] += 1;
-                                                    global += 1;
-                                                }
-                                                section[1] += 1;
-                                                global_total += 1;
-                                                pending -= 1;
-                                                print_progress();
-                                                if (pending === 0)
-                                                    return print_translation_status();
-                                            });
-                                            pending -= 1;
-                                            return;
-                                        }
+                                    get_file_data(`${path}/${file_dir}/${txt_file}`).then(data => {
                                         if (data === undefined) {
                                             console.log(`Couldn't read ${txt_file}`);
                                             pending -= 1;
@@ -251,7 +228,10 @@ exports.run = (client, message) => {
                                         pending -= 1;
                                         print_progress();
                                         if (pending === 0)
-                                            return print_translation_status();
+                                            return print_translation_status(part);
+                                    }).catch(err => {
+                                        console.error(err);
+                                        pending -= 1;
                                     });
 
                                 } else if (txt_file.startsWith("script_pak_")) {
@@ -265,33 +245,7 @@ exports.run = (client, message) => {
 
                                         files.forEach(text_file => {
                                             pending += 1;
-                                            fs.readFile(path + '/' + file_dir + '/' + txt_file + '/' + text_file, 'utf8', (err, data) => {
-
-                                                if (err) {
-                                                    fs.readFile(path + '/' + file_dir + '/' + txt_file + '/' + text_file, 'utf16le', (err, data) => {
-                                                        if (err) {
-                                                            console.error(err);
-                                                            pending -= 1;
-                                                            return;
-                                                        }
-                                                        if (data === undefined) {
-                                                            console.log(`Couldn't read ${txt_file}`);
-                                                            pending -= 1;
-                                                            return;
-                                                        }
-                                                        if (data.includes(`<text lang="en">`)) {
-                                                            section[0] += 1;
-                                                            global += 1;
-                                                        }
-                                                        section[1] += 1;
-                                                        global_total += 1;
-                                                        pending -= 1;
-                                                        print_progress();
-                                                        if (pending === 0)
-                                                            return print_translation_status();
-                                                    });
-                                                    return;
-                                                }
+                                            get_file_data(`${path}/${file_dir}/${txt_file}/${text_file}`).then(data => {
                                                 if (data === undefined) {
                                                     console.log(`Couldn't read ${txt_file}`);
                                                     pending -= 1;
@@ -306,7 +260,10 @@ exports.run = (client, message) => {
                                                 pending -= 1;
                                                 print_progress();
                                                 if (pending === 0)
-                                                    return print_translation_status();
+                                                    return print_translation_status(part);
+                                            }).catch(err => {
+                                                pending -= 1;
+                                                console.error(err);
                                             });
                                         });
                                         pending -= 1;
@@ -318,6 +275,234 @@ exports.run = (client, message) => {
                     });
                 });
             }).catch(console.error);
+
+        }
+
+        if (cleaned_command === 'get' && command.length === 3) {
+
+            let section;
+            let file_dir = `/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script/${command[2]}`;
+
+            fs.access(`../../${file_dir}`, (err) => {
+                if (err) {
+                    message.channel.send('Fichier introuvable.').catch(console.error);
+                    return;
+                }
+
+                if (file_dir[2] === '_') {
+                    section = "System Text";
+                } else if (file_dir.match(/e00_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e00")) {
+                    section = "Prologue";
+                } else if (file_dir.match(/e01_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e01")) {
+                    section = "Chapitre 1";
+                } else if (file_dir.match(/e02_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e02")) {
+                    section = "Chapitre 2";
+                    //console.log(`dir : ${file_dir} = Chapitre 2`);
+                } else if (file_dir.match(/e03_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e03")) {
+                    section = "Chapitre 3";
+                    //console.log(`dir : ${file_dir} = Chapitre 3`);
+                } else if (file_dir.match(/e04_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e04")) {
+                    section = "Chapitre 4";
+                    //console.log(`dir : ${file_dir} = Chapitre 4`);
+                } else if (file_dir.match(/e05_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e05")) {
+                    section = "Chapitre 5";
+                    //console.log(`dir : ${file_dir} = Chapitre 5`);
+                } else if (file_dir.match(/e06_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e06")) {
+                    section = "Chapitre 6";
+                    //console.log(`dir : ${file_dir} = Chapitre 6`);
+                } else if (file_dir.match(/e07_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e07")) {
+                    section = "Epilogue";
+                    //console.log(`dir : ${file_dir} = Epilogue`);
+                } else if (file_dir.match(/e08_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e08")) {
+                    section = "FTE";
+                    //console.log(`dir : ${file_dir} = FTE`);
+                } else if (file_dir.match(/e09_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e09")) {
+                    section = "Dangan Island";
+                    //console.log(`dir : ${file_dir} = Dangan Island`);
+                } else if (file_dir.startsWith("MAP_")) {
+                    section = "MAP";
+                    //console.log(`dir : ${file_dir} = Map`);
+                } else if (file_dir.startsWith("ldive_s")) {
+                    section = "Logic Dive";
+                    //console.log(`dir : ${file_dir} = Logic Dive`);
+                } else if (file_dir.startsWith("mtb_s")) {
+                    section = "Contre Attaque Ballistique";
+                    //console.log(`dir : ${file_dir} = Contre Attaque Ballistique`);
+                } else if (file_dir.startsWith("novel_") || file_dir.startsWith("script_pak_novel")) {
+                    section = "Danganronpa IF";
+                    //console.log(`dir : ${file_dir} = Danganronpa IF`);
+                }
+
+                get_revisions(file_dir, (err, revisions) => {
+                    if (err) return;
+
+                    let msg = new RichEmbed();
+                    msg.setAuthor(revisions[0].fileName, message.guild.me.user.avatarURL);
+                    msg.setTitle(`**${section}** - ${revisions[0].fileName}`);
+                    msg.setColor(message.guild.me.displayColor);
+                    msg.setDescription(file_dir);
+                    revisions.forEach(revision => {
+                        msg.addField(`Modifié le ${revision.date} par ${revision.modifier_name.name}.`, revision.data);
+                    });
+                    message.channel.send(msg);
+                });
+
+            });
+
+
+        }
+
+        if (cleaned_command === 'random' || cleaned_command.startsWith("rand")) {
+            fs.readdir(path, "utf8", (err, files) => {
+                if (err) {
+                    message.channel.send("L'analyse des dossiers a échoué.").catch(console.error);
+                    return;
+                }
+
+                let allFiles = [];
+
+                let pending = 0;
+                files.forEach(file_dir => {
+                    pending += 1;
+                    fs.readdir(path + '/' + file_dir, "utf8", (err, files) => {
+
+                        if (err) {
+                            pending -= 1;
+                            return;
+                        }
+
+                        let section;
+
+                        if (file_dir[2] === '_') {
+                            section = "System Text";
+                        } else if (file_dir.match(/e00_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e00")) {
+                            section = "Prologue";
+                        } else if (file_dir.match(/e01_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e01")) {
+                            section = "Chapitre 1";
+                        } else if (file_dir.match(/e02_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e02")) {
+                            section = "Chapitre 2";
+                            //console.log(`dir : ${file_dir} = Chapitre 2`);
+                        } else if (file_dir.match(/e03_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e03")) {
+                            section = "Chapitre 3";
+                            //console.log(`dir : ${file_dir} = Chapitre 3`);
+                        } else if (file_dir.match(/e04_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e04")) {
+                            section = "Chapitre 4";
+                            //console.log(`dir : ${file_dir} = Chapitre 4`);
+                        } else if (file_dir.match(/e05_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e05")) {
+                            section = "Chapitre 5";
+                            //console.log(`dir : ${file_dir} = Chapitre 5`);
+                        } else if (file_dir.match(/e06_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e06")) {
+                            section = "Chapitre 6";
+                            //console.log(`dir : ${file_dir} = Chapitre 6`);
+                        } else if (file_dir.match(/e07_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e07")) {
+                            section = "Epilogue";
+                            //console.log(`dir : ${file_dir} = Epilogue`);
+                        } else if (file_dir.match(/e08_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e08")) {
+                            section = "FTE";
+                            //console.log(`dir : ${file_dir} = FTE`);
+                        } else if (file_dir.match(/e09_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e09")) {
+                            section = "Dangan Island";
+                            //console.log(`dir : ${file_dir} = Dangan Island`);
+                        } else if (file_dir.startsWith("MAP_")) {
+                            section = "MAP";
+                            //console.log(`dir : ${file_dir} = Map`);
+                        } else if (file_dir.startsWith("ldive_s")) {
+                            section = "Logic Dive";
+                            //console.log(`dir : ${file_dir} = Logic Dive`);
+                        } else if (file_dir.startsWith("mtb_s")) {
+                            section = "Contre Attaque Ballistique";
+                            //console.log(`dir : ${file_dir} = Contre Attaque Ballistique`);
+                        } else if (file_dir.startsWith("novel_") || file_dir.startsWith("script_pak_novel")) {
+                            section = "Danganronpa IF";
+                            //console.log(`dir : ${file_dir} = Danganronpa IF`);
+                        }
+
+                        files.forEach(txt_file => {
+
+                            if (txt_file.endsWith(".txt")) {
+
+                                if (command.length >= 3 && command[2] === "analysis") {
+                                    pending += 1;
+                                    get_file_data(path + '/' + file_dir + '/' + txt_file).then(data => {
+                                        pending -= 1;
+                                        if (data.includes(`<text lang="en">`)) {
+                                            allFiles.push({
+                                                section: section,
+                                                path: path + '/' + file_dir + '/' + txt_file
+                                            });
+                                        }
+                                        if (pending === 0) {
+                                            let randomTrad = allFiles[get_random_index(allFiles)];
+                                            get_revisions(randomTrad.path.substring(5), (err, revisions) => {
+                                                if (err) return;
+
+                                                let msg = new RichEmbed();
+                                                msg.setAuthor("Traduction aléatoire", message.guild.me.user.avatarURL);
+                                                msg.setTitle(`**${section}** - ${revisions[0].fileName}`);
+                                                msg.setColor(message.guild.me.displayColor);
+                                                msg.setDescription(randomTrad.path);
+                                                revisions.forEach(revision => {
+                                                    msg.addField(`Modifié le ${revision.date} par ${revision.modifier_name.name}.`, revision.data);
+                                                });
+                                                message.channel.send(msg);
+                                            });
+                                        }
+                                    }).catch(err => {
+                                        pending -= 1;
+                                        console.error(err);
+                                    });
+                                } else {
+
+                                    allFiles.push({
+                                        section: section,
+                                        path: path + '/' + file_dir + '/' + txt_file
+                                    });
+
+                                }
+                            }
+                        });
+                        pending -= 1;
+
+                        if (pending === 0 && command.length < 3) {
+                            let randomTrad = allFiles[get_random_index(allFiles)];
+
+                            function find_trad(randomTrad) {
+                                get_file_data(randomTrad.path).then(data => {
+                                    let ignore = [
+                                        '...', 'Yes', 'No', 'Not really...', 'Outside',
+                                        'See who else is around', 'Leave here?', 'Cancel', 'Definitely!'
+                                    ];
+                                    let en_index = data.indexOf(`<text lang="ja">`);
+                                    if (data.includes(`<text lang="en">`) && !ignore.includes(data.substring(en_index + `<text lang="ja">`.length, data.indexOf(`</text>`, en_index)))) {
+                                        get_revisions(randomTrad.path.substring(5), (err, revisions) => {
+                                            if (err) return;
+
+                                            let msg = new RichEmbed();
+                                            msg.setAuthor("Traduction aléatoire", message.guild.me.user.avatarURL);
+                                            msg.setTitle(`**${randomTrad.section}** - ${revisions[0].fileName}`);
+                                            msg.setColor(message.guild.me.displayColor);
+                                            msg.setDescription(randomTrad.path);
+                                            revisions.forEach(revision => {
+                                                msg.addField(`Modifié le ${revision.date} par ${revision.modifier_name.name}.`, revision.data);
+                                            });
+                                            message.channel.send(msg);
+                                        });
+                                    } else {
+                                        randomTrad = allFiles[get_random_index(allFiles)];
+                                        return find_trad(randomTrad);
+                                    }
+                                }).catch(err => {
+                                    pending -= 1;
+                                    console.error(err);
+                                });
+                            }
+
+                            find_trad(randomTrad);
+
+                        }
+                    });
+                });
+            });
         }
 
         if (command[1] === 'fiches') {

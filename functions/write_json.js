@@ -1,9 +1,9 @@
 module.exports = {
 
-    write_to_file: function (obj, fileName, message, log_message) {
+    write_to_file: function (obj, fileName, message, log_message=null) {
         let json_var = JSON.stringify(obj);
 
-        let fs = require('fs');
+        let fs = require('graceful-fs');
 
         fs.writeFile(fileName, json_var, 'utf8', (err) => {
             if (err) {
@@ -14,11 +14,14 @@ module.exports = {
                 });
                 return;
             }
-            message.channel.send(log_message).catch(err => {
-                console.error(err);
-                console.error("write_json.js Ligne 19");
-            });
+            if (log_message) {
+                message.channel.send(log_message).catch(err => {
+                    console.error(err);
+                    console.error("write_json.js Ligne 19");
+                });
+            }
         });
+
     }
 
 };

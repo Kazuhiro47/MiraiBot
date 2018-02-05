@@ -5,13 +5,14 @@ exports.run = (client, message) => {
     let message_w_tag = message.content.slice('spoil '.length, message.content.length).trim();
 
     if (message_w_tag.length === 0) {
-        message.channel.send("Message vide.\n\nExemple d'utilisation :\n/spoil <spoil>Kazuhiro</spoil> est <spoil>l'instigateur</spoil>.").catch(console.error);
+
+        message.channel.send("Message vide.\n\nExemple d'utilisation :\n/spoil <spoil>Kazuhiro</spoil> est <spoil>l'instigateur</spoil>.").then(msg => {
+            message.delete().catch((onrejected) => {
+                console.error(onrejected);
+            });
+        }).catch(console.error);
         return;
     }
-
-    message.delete().catch((onrejected) => {
-        console.error(onrejected);
-    });
 
     let spoil_tag = "<spoil>";
     let spoil_end_tag = "</spoil>";
@@ -121,8 +122,9 @@ exports.run = (client, message) => {
         let msg = new Discord.RichEmbed();
 
         msg.setAuthor(message.author.username, message.author.avatarURL);
-        msg.addField("Message", spoiler_message.msg_w_tag);
-        msg.setColor(message.member.displayColor);
+        msg.addField("Message spoil (ajoutez une réaction pour voir le message)", spoiler_message.msg_w_tag);
+        if (message.member)
+            msg.setColor(message.member.displayColor);
         msg.setFooter(`Le message sera scellé le ${date.getUTCDate() + 1}/${date.getUTCMonth() + 1} à ${date.getUTCHours() + 1}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s`);
         message.channel.send(msg).then((msg) => {
 
@@ -146,5 +148,8 @@ exports.run = (client, message) => {
 
     }
 
+    message.delete().catch((onrejected) => {
+        console.error(onrejected);
+    });
 
 };

@@ -14,11 +14,13 @@ exports.run = (client, message) => {
 
     fate_opening.setTitle("Fate Zero Opening 2");
     fate_opening.setColor(message.guild.me.displayColor);
-    fate_opening.setThumbnail("https://www.youtube.com/watch?v=eQDK1qhzf6o");
+    fate_opening.setImage("https://www.youtube.com/watch?v=eQDK1qhzf6o");
+    fate_opening.setURL("https://www.youtube.com/watch?v=eQDK1qhzf6o");
 
     danganronpa_op.setTitle("Danganronpa 3 Zetsubou hen opening");
     danganronpa_op.setColor(message.guild.me.displayColor);
-    danganronpa_op.setThumbnail("https://youtu.be/qwNrL1NSfxY");
+    danganronpa_op.setImage("https://youtu.be/qwNrL1NSfxY");
+    danganronpa_op.setURL("https://youtu.be/qwNrL1NSfxY");
 
     message.channel.send(fate_opening);
     message.channel.send(danganronpa_op);

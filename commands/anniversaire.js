@@ -17,7 +17,7 @@ exports.run = (client, message) => {
         });
         guide_birthday_command.addField(
             `Guide commande anniversaire`,
-            `${bot_values['bot_prefix']}anniversaire <jour>/<mois>`
+            `${bot_values.bot_prefix}anniversaire <jour>/<mois>`
         );
 
         message.channel.send(guide_birthday_command);
@@ -25,7 +25,7 @@ exports.run = (client, message) => {
 
     const fileName = 'mirai_bot.json';
 
-    if (command[0] === 'show' && command.length === 1 && bot_values['bot_owners'].includes(message.author.id)) {
+    if (command[0] === 'show' && command.length === 1 && bot_values.bot_owners.includes(message.author.id)) {
         if (!fs.existsSync(fileName)) {
             message.channel.send("Aucun anniversaire enregistré.").catch(err => {
                 console.error(err);
@@ -156,7 +156,7 @@ exports.run = (client, message) => {
         }
     } else {
 
-        if (!bot_values['bot_owners'].includes(message.author.id)) {
+        if (!bot_values.bot_owners.includes(message.author.id)) {
             return error_cmd(message, [['Permissions', "Tu n'as pas le droit de modifier l'anniversaire de quelqu'un d'autre."]]);
         }
 
