@@ -4,17 +4,23 @@ let Dropbox = require('dropbox').Dropbox;
 const bot_values = require('../bot_data.js');
 let dbx = new Dropbox({accessToken: bot_values.bot_values.dropbox_token});
 
-function list_folder(path = '/danganronpa 2 traduction fr/sdse2_shared_data/data01/jp') {
+function list_folder(path = '/danganronpa 2 traduction fr/sdse2_shared_data/data01/jp/script') {
     dbx.filesListFolder({
         path: path,
-        recursive: false,
-        limit: 100
+        recursive: true,
     }).then(function (response) {
+        if (response.has_more) {
+            dbx.filesListFolderContinue({cursor: response.cursor}).then(response => {
+                console.log(response);
+            }).catch(console.error);
+        }
         console.log(response);
     }).catch(function (error) {
         console.log(error);
     });
 }
+
+list_folder();
 
 class Revision {
     constructor() {
@@ -25,16 +31,40 @@ class Revision {
     }
 }
 
-function get_file_data(path, encoding = 'utf16le', trad = true) {
-    return new Promise((resolve, reject)=> {
-    fs.readFile(path, encoding, (err, data) => {
+function get_file_promise(path, callback, trad = true) {
+    fs.readFile(path, 'utf16le', (err, data) => {
         if (err)
-            return reject(err);
-        if (trad && !data.includes('<text lang'))
-            resolve(get_file_data(path, 'utf8', trad));
-        resolve(data);
+            return callback(err, null);
+        if (trad && !data.includes('<text lang')) {
+            fs.readFile(path, 'utf8', (err, data) => {
+                if (err)
+                    return callback(err, null);
+                callback(null, data);
+            });
+            return;
+        }
+        callback(null, data);
     });
-    })
+}
+
+function get_file_data(path, trad = true) {
+    return new Promise((resolve, reject) => {
+        fs.readFile(path, 'utf16le', (err, data) => {
+            if (err)
+                reject(err);
+
+            if (trad && !data.includes('<text lang')) {
+                fs.readFile(path, 'utf8', (err, data) => {
+                    if (err)
+                        reject(err);
+
+                    resolve(data);
+                });
+            } else {
+                resolve(data);
+            }
+        });
+    });
 }
 
 /**
@@ -95,6 +125,11 @@ function get_revisions(path, callback) {
             }).catch(console.error);
         });
     }).catch(console.error);
+}
+
+function get_file_events() {
+
+
 }
 
 module.exports = {
