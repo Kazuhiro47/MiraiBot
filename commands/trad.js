@@ -1,5 +1,4 @@
 const Discord = require('discord.js');
-const existsSync = require("graceful-fs");
 const get_file_data = require("../functions/dropbox").get_file_data;
 const RichEmbed = require("discord.js").RichEmbed;
 const get_revisions = require("../functions/dropbox").get_revisions;
@@ -77,61 +76,236 @@ exports.run = (client, message) => {
 
         }
 
+        let part = {
+            "System Text": [0, 0],
+            "Prologue": [0, 0],
+            "Chapitre 1": [0, 0],
+            "Chapitre 2": [0, 0],
+            "Chapitre 3": [0, 0],
+            "Chapitre 4": [0, 0],
+            "Chapitre 5": [0, 0],
+            "Chapitre 6": [0, 0],
+            "Epilogue": [0, 0],
+            "FTE": [0, 0],
+            "Dangan Island": [0, 0],
+            "MAP": [0, 0],
+            "Logic Dive": [0, 0],
+            "Contre Attaque Ballistique": [0, 0],
+            "Danganronpa IF": [0, 0]
+        };
+
+        function get_section(file_dir, part, name = false) {
+            if (file_dir[2] === '_') {
+                if (name)
+                    return "System Text";
+                else
+                    return part["System Text"];
+                //console.log(`dir : ${file_dir} = System Text`);
+            } else if (file_dir.startsWith('e00_') || file_dir.startsWith("script_pak_e00")) {
+                if (name)
+                    return "Prologue";
+                else
+                    return part["Prologue"];
+                //console.log(`dir : ${file_dir} = Prologue`);
+            } else if (file_dir.startsWith('e01_') || file_dir.startsWith("script_pak_e01")) {
+                if (name)
+                    return "Chapitre 1";
+                else
+                    return part["Chapitre 1"];
+                //console.log(`dir : ${file_dir} = Chapitre 1`);
+            } else if (file_dir.startsWith('e02_') || file_dir.startsWith("script_pak_e02")) {
+                if (name)
+                    return "Chapitre 2";
+                else
+                    return part["Chapitre 2"];
+                //console.log(`dir : ${file_dir} = Chapitre 2`);
+            } else if (file_dir.startsWith('e03_') || file_dir.startsWith("script_pak_e03")) {
+                if (name)
+                    return "Chapitre 3";
+                else
+                    return part["Chapitre 3"];
+                //console.log(`dir : ${file_dir} = Chapitre 3`);
+            } else if (file_dir.startsWith('e04_') || file_dir.startsWith("script_pak_e04")) {
+                if (name)
+                    return "Chapitre 4";
+                else
+                    return part["Chapitre 4"];
+                //console.log(`dir : ${file_dir} = Chapitre 4`);
+            } else if (file_dir.startsWith('e05_') || file_dir.startsWith("script_pak_e05")) {
+                if (name)
+                    return "System Text";
+                else
+                    return part["Chapitre 5"];
+                //console.log(`dir : ${file_dir} = Chapitre 5`);
+            } else if (file_dir.startsWith('e06_') || file_dir.startsWith("script_pak_e06")) {
+                if (name)
+                    return "System Text";
+                else
+                    return part["Chapitre 6"];
+                //console.log(`dir : ${file_dir} = Chapitre 6`);
+            } else if (file_dir.startsWith('e07_') || file_dir.startsWith("script_pak_e07")) {
+                if (name)
+                    return "Epilogue";
+                else
+                    return part["Epilogue"];
+                //console.log(`dir : ${file_dir} = Epilogue`);
+            } else if (file_dir.startsWith('e08_') || file_dir.startsWith("script_pak_e08")) {
+                if (name)
+                    return "FTE";
+                else
+                    return part["FTE"];
+                //console.log(`dir : ${file_dir} = FTE`);
+            } else if (file_dir.startsWith('e09_') || file_dir.startsWith("script_pak_e09")) {
+                if (name)
+                    return "Dangan Island";
+                else
+                    return part["Dangan Island"];
+                //console.log(`dir : ${file_dir} = Dangan Island`);
+            } else if (file_dir.startsWith("MAP_")) {
+                if (name)
+                    return "MAP";
+                else
+                    return part["MAP"];
+                //console.log(`dir : ${file_dir} = Map`);
+            } else if (file_dir.startsWith("ldive_s")) {
+                if (name)
+                    return "Logic Dive";
+                else
+                    return part["Logic Dive"];
+                //console.log(`dir : ${file_dir} = Logic Dive`);
+            } else if (file_dir.startsWith("mtb_s")) {
+                if (name)
+                    return "Contre Attaque Ballistique";
+                else
+                    return part["Contre Attaque Ballistique"];
+                //console.log(`dir : ${file_dir} = Contre Attaque Ballistique`);
+            } else if (file_dir.startsWith("novel_") || file_dir.startsWith("script_pak_novel")) {
+                if (name)
+                    return "Danganronpa IF";
+                else
+                    return part["Danganronpa IF"];
+                //console.log(`dir : ${file_dir} = Danganronpa IF`);
+            } else {
+                return "Erreur";
+            }
+        }
+
+        function read_single_folder(file_dir, part = null, avancement = true, global, global_total, print_progress = function () {
+            console.error("None");
+        }) {
+            return new Promise((resolve, reject) => {
+
+
+                fs.readdir(path + '/' + file_dir, "utf8", (err, files) => {
+
+                    if (err) {
+                        return;
+                    }
+
+                    let fileDataPromises = [];
+
+                    let dirPromises = [];
+                    let allFilesRes = [];
+
+                    files.forEach(directory_or_txt => {
+
+                        if (directory_or_txt.endsWith(".txt")) {
+
+                            if (avancement)
+                                fileDataPromises.push(get_file_data(`${path}/${file_dir}/${directory_or_txt}`));
+                            else {
+                                let section = get_section(file_dir, part, true);
+
+                                allFilesRes.push({
+                                    section: section,
+                                    path: path + '/' + file_dir + '/' + directory_or_txt
+                                });
+                            }
+
+
+                        } else if (directory_or_txt.startsWith("script_pak_")) {
+
+                            dirPromises.push(new Promise((resolve, reject) => {
+
+                                fs.readdir(path + '/' + file_dir + '/' + directory_or_txt, (err, files) => {
+
+                                    if (err) {
+                                        reject(err);
+                                    }
+
+                                    files.forEach(text_file => {
+
+                                        if (avancement) {
+                                            fileDataPromises.push(get_file_data(`${path}/${file_dir}/${directory_or_txt}/${text_file}`));
+                                        } else {
+                                            let section = get_section(file_dir, part, true);
+
+                                            allFilesRes.push({
+                                                section: section,
+                                                path: path + '/' + file_dir + '/' + directory_or_txt + '/' + text_file
+                                            })
+                                        }
+                                    });
+
+                                    resolve(null);
+                                });
+
+                            }));
+                        }
+                    });
+
+                    Promise.all(dirPromises).then(() => {
+
+                        if (avancement) {
+
+                            Promise.all(fileDataPromises).then(allFiles => {
+
+                                let section = get_section(file_dir, part);
+
+                                allFiles.forEach(data => {
+
+                                    if (data === undefined) {
+                                        console.log(`Couldn't read.`);
+                                        return;
+                                    }
+                                    if (data.includes(`<text lang="en">`)) {
+                                        section[0] += 1;
+                                        global += 1;
+                                    }
+                                    try {
+                                        section[1] += 1;
+                                    } catch (err) {
+                                        console.error(section);
+                                        reject(err);
+                                    }
+                                    global_total += 1;
+                                    print_progress();
+
+                                });
+
+                                resolve([global, global_total]);
+
+                            }).catch(err => reject(err));
+
+                        } else {
+
+                            resolve(allFilesRes);
+
+                        }
+
+
+                    }).catch(err => reject(err));
+
+                });
+
+            });
+        }
+
+
         const path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
         if (cleaned_command === "avancement" || cleaned_command.startsWith("avan")) {
 
             message.channel.send("Analyse des fichiers en cours...").then((msg) => {
-
-                function get_section(file_dir, part) {
-                    if (file_dir[2] === '_') {
-                        return part["System Text"];
-                        //console.log(`dir : ${file_dir} = System Text`);
-                    } else if (file_dir.startsWith('e00_') || file_dir.startsWith("script_pak_e00")) {
-                        return part["Prologue"];
-                        //console.log(`dir : ${file_dir} = Prologue`);
-                    } else if (file_dir.startsWith('e01_') || file_dir.startsWith("script_pak_e01")) {
-                        return part["Chapitre 1"];
-                        //console.log(`dir : ${file_dir} = Chapitre 1`);
-                    } else if (file_dir.startsWith('e02_') || file_dir.startsWith("script_pak_e02")) {
-                        return part["Chapitre 2"];
-                        //console.log(`dir : ${file_dir} = Chapitre 2`);
-                    } else if (file_dir.startsWith('e03_') || file_dir.startsWith("script_pak_e03")) {
-                        return part["Chapitre 3"];
-                        //console.log(`dir : ${file_dir} = Chapitre 3`);
-                    } else if (file_dir.startsWith('e04_') || file_dir.startsWith("script_pak_e04")) {
-                        return part["Chapitre 4"];
-                        //console.log(`dir : ${file_dir} = Chapitre 4`);
-                    } else if (file_dir.startsWith('e05_') || file_dir.startsWith("script_pak_e05")) {
-                        return part["Chapitre 5"];
-                        //console.log(`dir : ${file_dir} = Chapitre 5`);
-                    } else if (file_dir.startsWith('e06_') || file_dir.startsWith("script_pak_e06")) {
-                        return part["Chapitre 6"];
-                        //console.log(`dir : ${file_dir} = Chapitre 6`);
-                    } else if (file_dir.startsWith('e07_') || file_dir.startsWith("script_pak_e07")) {
-                        return part["Epilogue"];
-                        //console.log(`dir : ${file_dir} = Epilogue`);
-                    } else if (file_dir.startsWith('e08_') || file_dir.startsWith("script_pak_e08")) {
-                        return part["FTE"];
-                        //console.log(`dir : ${file_dir} = FTE`);
-                    } else if (file_dir.startsWith('e09_') || file_dir.startsWith("script_pak_e09")) {
-                        return part["Dangan Island"];
-                        //console.log(`dir : ${file_dir} = Dangan Island`);
-                    } else if (file_dir.startsWith("MAP_")) {
-                        return part["MAP"];
-                        //console.log(`dir : ${file_dir} = Map`);
-                    } else if (file_dir.startsWith("ldive_s")) {
-                        return part["Logic Dive"];
-                        //console.log(`dir : ${file_dir} = Logic Dive`);
-                    } else if (file_dir.startsWith("mtb_s")) {
-                        return part["Contre Attaque Ballistique"];
-                        //console.log(`dir : ${file_dir} = Contre Attaque Ballistique`);
-                    } else if (file_dir.startsWith("novel_") || file_dir.startsWith("script_pak_novel")) {
-                        return part["Danganronpa IF"];
-                        //console.log(`dir : ${file_dir} = Danganronpa IF`);
-                    } else {
-                        return "Erreur";
-                    }
-                }
 
                 fs.readdir(path, "utf8", (err, files) => {
                     if (err) {
@@ -143,24 +317,6 @@ exports.run = (client, message) => {
                     let global = 0;
                     let global_total = 0;
                     let progressInt = 50;
-
-                    let part = {
-                        "System Text": [0, 0],
-                        "Prologue": [0, 0],
-                        "Chapitre 1": [0, 0],
-                        "Chapitre 2": [0, 0],
-                        "Chapitre 3": [0, 0],
-                        "Chapitre 4": [0, 0],
-                        "Chapitre 5": [0, 0],
-                        "Chapitre 6": [0, 0],
-                        "Epilogue": [0, 0],
-                        "FTE": [0, 0],
-                        "Dangan Island": [0, 0],
-                        "MAP": [0, 0],
-                        "Logic Dive": [0, 0],
-                        "Contre Attaque Ballistique": [0, 0],
-                        "Danganronpa IF": [0, 0]
-                    };
 
                     let progress_messages = [];
 
@@ -190,107 +346,34 @@ exports.run = (client, message) => {
                         });
                     }
 
-                    function print_progress() {
-                        let percentage = (Math.round((global / global_total * 100) * 100) / 100).toFixed(2);
-                        if (percentage > progressInt && percentage < progressInt + 20) {
-                            message.channel.send(`${progressInt}% des fichiers analysés`).then(msg => {
-                                progress_messages.push(msg);
-                            }).catch(console.error);
-                            progressInt += 50;
-                        }
-                    }
-
-                    function read_single_folder(file_dir) {
-                        return new Promise((resolve, reject) => {
-
-                            fs.readdir(path + '/' + file_dir, "utf8", (err, files) => {
-
-                                if (err) {
-                                    return;
-                                }
-
-                                let fileDataPromises = [];
-
-                                let dirPromises = [];
-
-                                files.forEach(directory_or_txt => {
-
-                                    if (directory_or_txt.endsWith(".txt")) {
-
-                                        fileDataPromises.push(get_file_data(`${path}/${file_dir}/${directory_or_txt}`));
-
-                                    } else if (directory_or_txt.startsWith("script_pak_")) {
-
-                                        dirPromises.push(new Promise((resolve, reject) => {
-
-                                            fs.readdir(path + '/' + file_dir + '/' + directory_or_txt, 'utf8', (err, files) => {
-
-                                                if (err) {
-                                                    reject(err);
-                                                }
-
-                                                files.forEach(text_file => {
-                                                    fileDataPromises.push(get_file_data(`${path}/${file_dir}/${directory_or_txt}/${text_file}`));
-                                                });
-
-                                                resolve(null);
-                                            });
-
-                                        }));
-                                    }
-                                });
-
-                                Promise.all(dirPromises).then(() => {
-
-                                    Promise.all(fileDataPromises).then(allFiles => {
-
-                                        let section = get_section(file_dir, part);
-
-                                        allFiles.forEach(data => {
-
-                                            if (data === undefined) {
-                                                console.log(`Couldn't read.`);
-                                                return;
-                                            }
-                                            if (data.includes(`<text lang="en">`)) {
-                                                section[0] += 1;
-                                                global += 1;
-                                            }
-                                            try {
-                                                section[1] += 1;
-                                            } catch (err) {
-                                                console.error(section);
-                                                reject(err);
-                                            }
-                                            global_total += 1;
-                                            print_progress();
-
-                                        });
-
-                                        resolve(null);
-
-                                    }).catch(err => reject(err));
-
-                                }).catch(err => reject(err));
-
-                            });
-
-                        });
-                    }
-
                     let directoryAnalysis = [];
 
                     files.forEach(file_dir => {
-                        directoryAnalysis.push(read_single_folder(file_dir));
+                        directoryAnalysis.push(read_single_folder(file_dir, part, true, global, global_total, function print_progress() {
+                            let percentage = (Math.round((global / global_total * 100) * 100) / 100).toFixed(2);
+                            if (percentage > progressInt && percentage < progressInt + 20) {
+                                message.channel.send(`${progressInt}% des fichiers analysés`).then(msg => {
+                                    progress_messages.push(msg);
+                                }).catch(console.error);
+                                progressInt += 50;
+                            }
+                        }));
                     });
 
-                    Promise.all(directoryAnalysis).then(() => {
+                    Promise.all(directoryAnalysis).then((globals) => {
+
+                        globals.forEach(g => {
+
+                            global += g[0];
+                            global_total += g[1];
+
+                        });
 
                         print_translation_status(part);
 
                     }).catch(err => {
-                       console.error(err);
-                       message.channel.send("Erreur lors de l'analyse des fichiers").catch(console.error);
+                        console.error(err);
+                        message.channel.send("Erreur lors de l'analyse des fichiers").catch(console.error);
                     });
 
 
@@ -374,157 +457,66 @@ exports.run = (client, message) => {
         }
 
         if (cleaned_command === 'random' || cleaned_command.startsWith("rand")) {
-            fs.readdir(path, "utf8", (err, files) => {
+            fs.readdir(path, (err, files) => {
                 if (err) {
                     message.channel.send("L'analyse des dossiers a échoué.").catch(console.error);
                     return;
                 }
 
-                let allFiles = [];
+                let dirPromises = [];
 
-                let pending = 0;
                 files.forEach(file_dir => {
-                    pending += 1;
-                    fs.readdir(path + '/' + file_dir, "utf8", (err, files) => {
 
-                        if (err) {
-                            pending -= 1;
-                            return;
-                        }
+                    dirPromises.push(read_single_folder(file_dir, part, false));
 
-                        let section;
-
-                        if (file_dir[2] === '_') {
-                            section = "System Text";
-                        } else if (file_dir.match(/e00_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e00")) {
-                            section = "Prologue";
-                        } else if (file_dir.match(/e01_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e01")) {
-                            section = "Chapitre 1";
-                        } else if (file_dir.match(/e02_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e02")) {
-                            section = "Chapitre 2";
-                            //console.log(`dir : ${file_dir} = Chapitre 2`);
-                        } else if (file_dir.match(/e03_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e03")) {
-                            section = "Chapitre 3";
-                            //console.log(`dir : ${file_dir} = Chapitre 3`);
-                        } else if (file_dir.match(/e04_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e04")) {
-                            section = "Chapitre 4";
-                            //console.log(`dir : ${file_dir} = Chapitre 4`);
-                        } else if (file_dir.match(/e05_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e05")) {
-                            section = "Chapitre 5";
-                            //console.log(`dir : ${file_dir} = Chapitre 5`);
-                        } else if (file_dir.match(/e06_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e06")) {
-                            section = "Chapitre 6";
-                            //console.log(`dir : ${file_dir} = Chapitre 6`);
-                        } else if (file_dir.match(/e07_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e07")) {
-                            section = "Epilogue";
-                            //console.log(`dir : ${file_dir} = Epilogue`);
-                        } else if (file_dir.match(/e08_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e08")) {
-                            section = "FTE";
-                            //console.log(`dir : ${file_dir} = FTE`);
-                        } else if (file_dir.match(/e09_\d\d\d_\d\d\d.lin/) || file_dir.startsWith("script_pak_e09")) {
-                            section = "Dangan Island";
-                            //console.log(`dir : ${file_dir} = Dangan Island`);
-                        } else if (file_dir.startsWith("MAP_")) {
-                            section = "MAP";
-                            //console.log(`dir : ${file_dir} = Map`);
-                        } else if (file_dir.startsWith("ldive_s")) {
-                            section = "Logic Dive";
-                            //console.log(`dir : ${file_dir} = Logic Dive`);
-                        } else if (file_dir.startsWith("mtb_s")) {
-                            section = "Contre Attaque Ballistique";
-                            //console.log(`dir : ${file_dir} = Contre Attaque Ballistique`);
-                        } else if (file_dir.startsWith("novel_") || file_dir.startsWith("script_pak_novel")) {
-                            section = "Danganronpa IF";
-                            //console.log(`dir : ${file_dir} = Danganronpa IF`);
-                        }
-
-                        files.forEach(txt_file => {
-
-                            if (txt_file.endsWith(".txt")) {
-
-                                if (command.length >= 3 && command[2] === "analysis") {
-                                    pending += 1;
-                                    get_file_data(path + '/' + file_dir + '/' + txt_file, pending).then((data, pend) => {
-                                        pending = pend;
-                                        pending -= 1;
-                                        if (data.includes(`<text lang="en">`)) {
-                                            allFiles.push({
-                                                section: section,
-                                                path: path + '/' + file_dir + '/' + txt_file
-                                            });
-                                        }
-                                        if (pending === 0) {
-                                            let randomTrad = allFiles[get_random_index(allFiles)];
-                                            get_revisions(randomTrad.path.substring(5), (err, revisions) => {
-                                                if (err) return;
-
-                                                let msg = new RichEmbed();
-                                                msg.setAuthor("Traduction aléatoire", message.guild.me.user.avatarURL);
-                                                msg.setTitle(`**${section}** - ${revisions[0].fileName}`);
-                                                msg.setColor(message.guild.me.displayColor);
-                                                msg.setDescription(randomTrad.path);
-                                                revisions.forEach(revision => {
-                                                    msg.addField(`Modifié le ${revision.date} par ${revision.modifier_name.name}.`, revision.data);
-                                                });
-                                                message.channel.send(msg);
-                                            });
-                                        }
-                                    }).catch(err => {
-                                        pending -= 1;
-                                        console.error(err);
-                                    });
-                                } else {
-
-                                    allFiles.push({
-                                        section: section,
-                                        path: path + '/' + file_dir + '/' + txt_file
-                                    });
-
-                                }
-                            }
-                        });
-                        pending -= 1;
-
-                        if (pending === 0 && command.length < 3) {
-                            let randomTrad = allFiles[get_random_index(allFiles)];
-
-                            function find_trad(randomTrad) {
-                                get_file_data(randomTrad.path, pending).then((data, pend) => {
-                                    pending = pend;
-                                    let ignore = [
-                                        '...', 'Yes', 'No', 'Not really...', 'Outside',
-                                        'See who else is around', 'Leave here?', 'Cancel', 'Definitely!'
-                                    ];
-                                    let en_index = data.indexOf(`<text lang="ja">`);
-                                    if (data.includes(`<text lang="en">`) && !ignore.includes(data.substring(en_index + `<text lang="ja">`.length, data.indexOf(`</text>`, en_index)))) {
-                                        get_revisions(randomTrad.path.substring(5), (err, revisions) => {
-                                            if (err) return;
-
-                                            let msg = new RichEmbed();
-                                            msg.setAuthor("Traduction aléatoire", message.guild.me.user.avatarURL);
-                                            msg.setTitle(`**${randomTrad.section}** - ${revisions[0].fileName}`);
-                                            msg.setColor(message.guild.me.displayColor);
-                                            msg.setDescription(randomTrad.path);
-                                            revisions.forEach(revision => {
-                                                msg.addField(`Modifié le ${revision.date} par ${revision.modifier_name.name}.`, revision.data);
-                                            });
-                                            message.channel.send(msg);
-                                        });
-                                    } else {
-                                        randomTrad = allFiles[get_random_index(allFiles)];
-                                        return find_trad(randomTrad);
-                                    }
-                                }).catch(err => {
-                                    pending -= 1;
-                                    console.error(err);
-                                });
-                            }
-
-                            find_trad(randomTrad);
-
-                        }
-                    });
                 });
+
+                Promise.all(dirPromises).then(arrayOfArrayOfFiles => {
+
+                    let files = [];
+                    arrayOfArrayOfFiles.forEach(array => {
+
+                        files = files.concat(array);
+
+                    });
+
+                    let randomTrad = files[get_random_index(files)];
+
+                    function find_trad(randomTrad) {
+                        get_file_data(randomTrad.path).then((data) => {
+                            let ignore = [
+                                '...', 'Yes', 'No', 'Not really...', 'Outside',
+                                'See who else is around', 'Leave here?', 'Cancel', 'Definitely!'
+                            ];
+                            data = data.toString();
+                            let en_index = data.indexOf(`<text lang="ja">`);
+                            if (data.includes(`<text lang="en">`) && !ignore.includes(data.substring(en_index + `<text lang="ja">`.length, data.indexOf(`</text>`, en_index)))) {
+                                get_revisions(randomTrad.path.substring(5), (err, revisions) => {
+                                    if (err) return;
+
+                                    let msg = new RichEmbed();
+                                    msg.setAuthor("Traduction aléatoire", message.guild.me.user.avatarURL);
+                                    msg.setTitle(`**${randomTrad.section}** - ${revisions[0].fileName}`);
+                                    msg.setColor(message.guild.me.displayColor);
+                                    msg.setDescription(randomTrad.path);
+                                    revisions.forEach(revision => {
+                                        msg.addField(`Modifié le ${revision.date} par ${revision.modifier_name.name}.`, revision.data);
+                                    });
+                                    message.channel.send(msg);
+                                });
+                            } else {
+                                randomTrad = files[get_random_index(files)];
+                                return find_trad(randomTrad);
+                            }
+                        }).catch(err => {
+                            console.error(err);
+                        });
+                    }
+
+                    find_trad(randomTrad);
+
+                }).catch(console.error);
+
             });
         }
 

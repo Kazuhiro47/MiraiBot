@@ -3,6 +3,14 @@ module.exports = {
 
     check_message: function (message) {
 
+        function isUpperCase(str) {
+            return str === str.toUpperCase();
+        }
+
+        /*if (isUpperCase(message.content)) {
+            message.channel.send('Pas besoin de crier, ' + message.member.displayName).catch(console.error);
+        }*/
+
         if (message.author.id !== bot_data.bot_values.bot_id) {
             if (message.content.includes('<spoil>') || message.content.includes('</spoil>')) {
 

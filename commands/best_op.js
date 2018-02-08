@@ -3,26 +3,20 @@
 ** 30/12/2017
 */
 
-const Discord = require('discord.js');
-
 exports.run = (client, message) => {
 
     console.log('Launching best_op command');
 
-    let fate_opening = new Discord.RichEmbed();
-    let danganronpa_op = new Discord.RichEmbed();
+    let best_openings = [
+        'https://www.youtube.com/watch?v=eQDK1qhzf6o',
+        'https://youtu.be/qwNrL1NSfxY',
+        'https://youtu.be/xMmOwXCmdTk'
+    ];
 
-    fate_opening.setTitle("Fate Zero Opening 2");
-    fate_opening.setColor(message.guild.me.displayColor);
-    fate_opening.setImage("https://www.youtube.com/watch?v=eQDK1qhzf6o");
-    fate_opening.setURL("https://www.youtube.com/watch?v=eQDK1qhzf6o");
+    best_openings.forEach(opening => {
 
-    danganronpa_op.setTitle("Danganronpa 3 Zetsubou hen opening");
-    danganronpa_op.setColor(message.guild.me.displayColor);
-    danganronpa_op.setImage("https://youtu.be/qwNrL1NSfxY");
-    danganronpa_op.setURL("https://youtu.be/qwNrL1NSfxY");
+        message.channel.send(opening).catch(console.error);
 
-    message.channel.send(fate_opening);
-    message.channel.send(danganronpa_op);
+    });
 
 };

@@ -47,19 +47,11 @@ function get_file_promise(path, callback, trad = true) {
     });
 }
 
-function get_file_data(path, trad = true) {
+function get_file_data(path) {
     return new Promise((resolve, reject) => {
-        fs.readFile(path, 'utf16le', (err, data) => {
-            if (err)
+        fs.readFile(path, (err, data) => {
+            if (err) {
                 reject(err);
-
-            if (trad && !data.includes('<text lang')) {
-                fs.readFile(path, 'utf8', (err, data) => {
-                    if (err)
-                        reject(err);
-
-                    resolve(data);
-                });
             } else {
                 resolve(data);
             }
