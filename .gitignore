@@ -11,3 +11,8 @@ package.json
 restart_Mirai_Bot.bat
 run_Mirai_Bot.bat
 stop_Mirai_Bot.bat
+LOCK
+LOG
+data/
+drbirhtdays.txt
+test.js
