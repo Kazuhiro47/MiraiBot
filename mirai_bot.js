@@ -2,13 +2,21 @@ const Discord = require('discord.js');
 const bot_data = require('./bot_data.js');
 const client = new Discord.Client();
 
+const Enmap = require("enmap");
+const EnmapLevel = require('enmap-level');
+
 // file stream import
 const fs = require('graceful-fs');
+const check_xp = require("./functions/parsing_functions").check_xp;
 const check_message = require("./functions/parsing_functions").check_message;
 
+// Initialize an instance of Enmap
+const userProvider = new EnmapLevel({name: 'memberXP'});
+client.memberXP = new Enmap({provider: userProvider});
 
 client.on('ready', () => {
     console.log('I am ready!');
+
 });
 
 
@@ -16,6 +24,7 @@ client.on('ready', () => {
 client.on('message', message => {
 
     check_message(message);
+    check_xp(client, message);
 
     if (!message.content.startsWith(bot_data.bot_values.bot_prefix)) return;
 
@@ -75,10 +84,91 @@ function set_minute_interval() {
 
         if (UTCminute === 0 || minute === 0) {
             console.log("Hour interval found");
+            set_monokuma_announcement();
             set_hour_interval();
         }
 
     }, 60000);
+}
+
+let monokuma_interval;
+
+function set_monokuma_announcement() {
+
+    let morning_done = false;
+    let evening_done = false;
+
+    monokuma_interval = setInterval(() => {
+
+        if (evening_done && morning_done) {
+            clearInterval(monokuma_interval);
+        }
+
+        let date = new Date();
+        let UTChour = date.getUTCHours() + 1;
+
+        if (UTChour === 7) {
+            console.log("Morning interval found");
+            set_morning_day_interval();
+            morning_done = true;
+        }
+
+        if (UTChour === 22) {
+            console.log("Evening interval found");
+            set_evening_interval();
+            evening_done = true;
+        }
+
+    }, 60000 * 60);
+}
+
+function set_morning_day_interval() {
+    const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
+
+    generalChannelMiraiTeam.send("Bonjour, tout le monde ! Il est maintenant 7h du matin\n" +
+        "et la période de nuit est officiellement terminée !\n" +
+        "Il est l'heure de se lever !\n" +
+        "\n" +
+        "Préparez-vous à accueillir un autre jour meeeeerveilleux !").catch(console.error);
+
+    setInterval(() => {
+
+
+        generalChannelMiraiTeam.send("Bonjour, tout le monde ! Il est maintenant 7h du matin\n" +
+            "et la période de nuit est officiellement terminée !\n" +
+            "Il est l'heure de se lever !\n" +
+            "\n" +
+            "Préparez-vous à accueillir un autre jour meeeeerveilleux !").catch(console.error);
+
+    }, 60000 * 60 * 24);
+}
+
+function set_evening_interval() {
+    const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
+
+    generalChannelMiraiTeam.send("Mm, ahem, ceci est une annonce du serveur.\n" +
+        "Il est maintenant 22h.\n" +
+        "\n" +
+        "Autrement dit, c'est officiellement la période de nuit.\n" +
+        "Les salons discord vont bientôt être fermés, et y discuter à \n" +
+        "partir de maintenant est strictement interdit.\n" +
+        "Maintenant... faîtes de beaux rêves ! Bonne nuit, dormez\n" +
+        "profondément, ne laissez pas les punaises vous mordre...").catch(console.error);
+
+    setInterval(() => {
+
+
+        generalChannelMiraiTeam.send("Mm, ahem, ceci est une annonce du serveur.\n" +
+            "Il est maintenant 22h.\n" +
+            "\n" +
+            "Autrement dit, c'est officiellement la période de nuit.\n" +
+            "Les salons discord vont bientôt être fermés, et y discuter à \n" +
+            "partir de maintenant est strictement interdit.\n" +
+            "Maintenant... faîtes de beaux rêves ! Bonne nuit, dormez\n" +
+            "profondément, ne laissez pas les punaises vous mordre...").catch(console.error);
+
+    }, 60000 * 60 * 24);
+
 }
 
 let hour_interval;
@@ -89,10 +179,9 @@ function set_hour_interval() {
     hour_interval = setInterval(function () {
 
         let date = new Date();
-        let UTChour = date.getUTCHours();
-        let hour = date.getHours();
+        let UTChour = date.getUTCHours() + 1;
 
-        if (UTChour === 0 || hour === 0) {
+        if (UTChour === 0) {
             console.log("Day interval found");
             set_day_interval();
         }
@@ -133,38 +222,32 @@ function check_birthday() {
                         }
                     });
 
+                    obj.dr_anniversaires.forEach(birthDay => {
+                        if (birthDay.day === day && birthDay.month === month) {
+                            generalChannelMiraiTeam.send(`C'est l'anniversaire de ${birthDay.name} !`);
+                            /*let danganronpa_characters = require("danganronpa_characters.js");
+                            let dataBirth = danganronpa_characters[birthDay.name];
+                            generalChannelMiraiTeam.send(
+                                new Discord.RichEmbed()
+                                    .setAuthor(`Anniversaire de ${birthDay.name}`, dataBirth.avatar)
+                                    .setTitle(birthDay.name)
+                                    .setDescription(dataBirth.description)
+                                    .addField("Nom Japonais", dataBirth.japaneseName, true)
+                                    .addField("Talent", dataBirth.talent, true)
+                                    .addField("Aime", dataBirth.likes, true)
+                                    .addField("N'aime pas", dataBirth.dislikes, true)
+                                    .setImage(dataBirth.image)
+                                    .setFooter(`Né(e) le ${day} `)
+                            ).catch(console.error);*/
+                        }
+                    })
+
                 }
             });
 
         }
     }
 }
-
-/*let ncp = require('ncp').ncp;
-
-ncp.limit = 16;
-
-setInterval(function () {
-    ncp("../../Danganronpa 2 traduction FR/", "../../../Documents/", function (err) {
-        if (err) {
-            return console.error(err);
-        }
-        console.log('Backup of DR2 done');
-    });
-}, 60000 * 60 * 60 * 48);*/
-
-/*net = require("net");
-
-net.createServer((socket) => {
-    //just added
-    socket.on("error", (err) => {
-            console.log("Caught flash policy server socket error: ");
-            console.log(err.stack);
-        }
-    );
-
-    socket.end();
-}).listen(843);*/
 
 
 // Login
