@@ -62,7 +62,15 @@ exports.run = (client, message) => {
                         translation_array = line.split(',');
 
                         if (translation_array.length === 3) {
-                            //TODO: handle 1024 character limit
+                            if (i === 25) {
+                                message.channel.send(terms).catch(console.error);
+                                terms = new Discord.RichEmbed()
+                                    .setTitle("Terminologie")
+                                    .setDescription("Traductions récurrentes pour Danganronpa 2")
+                                    .setThumbnail("https://vignette.wikia.nocookie.net/danganronpa/images/f/f7/Danganronpa_2_Goodbye_Despair_Box_Art_NISA_PS_Vita_%282014%29.jpg/revision/latest?cb=20140418154650")
+                                    .setColor(message.guild.me.displayColor);
+                                    i = 0;
+                            }
                             terms.addField(translation_array[1], translation_array[2], true);
                             i += 1;
                         }
@@ -190,7 +198,7 @@ exports.run = (client, message) => {
             }
         }
 
-        function read_single_folder(file_dir, part = null, avancement = true, global, global_total, print_progress = function () {
+        function read_single_folder(path, file_dir, part = null, avancement = true, global, global_total, print_progress = function () {
             console.error("None");
         }) {
             return new Promise((resolve, reject) => {
@@ -301,8 +309,86 @@ exports.run = (client, message) => {
             });
         }
 
-
         const path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
+
+        function readDirectory(path, encoding) {
+            return new Promise((resolve, reject) => {
+                fs.readdir(path, encoding, (err, files) => {
+                    if (err) reject(err);
+                    resolve(files);
+                });
+            });
+        }
+
+        if (cleaned_command === 'stat') {
+
+            message.channel.send("Calcul en cours...").catch(console.error);
+
+            let statistics = {};
+
+            function getrevsPromise(file_path) {
+                return new Promise((resolve, reject) => {
+                    get_revisions(file_path, (err, revisions) => {
+                        if (err) reject(err);
+                        resolve(revisions);
+                    });
+                });
+            }
+
+            readDirectory(path, 'utf8').then(files => {
+
+                let dirPromises = [];
+
+                files.forEach(directory => {
+                    dirPromises.push(new Promise((resolve, reject) => {
+
+                        readDirectory(path + '/' + directory, 'utf8').then(all_dirs => {
+
+                            let txtFilesPromises = [];
+
+                            all_dirs.forEach(dir_or_file => {
+                                if (dir_or_file.endsWith('.txt')) {
+                                    txtFilesPromises.push(getrevsPromise(path.substring(5) + '/' + directory + '/' + dir_or_file, 'utf8'));
+                                } else if (dir_or_file.startsWith("script_pak")) {
+                                    readDirectory(path + '/' + directory + '/' + dir_or_file, 'utf8').then(txt_files => {
+                                        txt_files.forEach(txt_f => {
+                                            txtFilesPromises.push(getrevsPromise(path.substring(5) + '/' + directory + '/' + dir_or_file + '/' + txt_f));
+                                        });
+                                    }).catch(err => reject(err));
+                                }
+                            });
+
+                            Promise.all(txtFilesPromises).then(txtfilesRev => {
+                                resolve(txtfilesRev);
+                            }).catch(err => reject(err));
+
+                        }).catch(err => reject(err));
+
+                    }));
+                });
+
+                Promise.all(dirPromises).then(arrayOfArrayOfRevs => {
+                    arrayOfArrayOfRevs.forEach(arrayOfRevs => {
+                        arrayOfRevs.forEach(revisions => {
+                            revisions.forEach(revision => {
+                                if (!(revision.modifier_name in statistics)) {
+                                    statistics[revision.modifier_name] = null;
+                                } else {
+                                    if (!(part in statistics[revision.modifier_name])) {
+                                        statistics[revision.modifier_name][part] = 0;
+                                    } else {
+                                        statistics[revision.modifier_name][part] += 1
+                                    }
+                                }
+                            });
+                            console.log('done');
+                        });
+                    });
+                }).catch(console.error);
+            }).catch(console.error);
+
+        }
+
         if (cleaned_command === "avancement" || cleaned_command.startsWith("avan")) {
 
             message.channel.send("Analyse des fichiers en cours...").then((msg) => {
@@ -349,7 +435,7 @@ exports.run = (client, message) => {
                     let directoryAnalysis = [];
 
                     files.forEach(file_dir => {
-                        directoryAnalysis.push(read_single_folder(file_dir, part, true, global, global_total, function print_progress() {
+                        directoryAnalysis.push(read_single_folder(path, file_dir, part, true, global, global_total, function print_progress() {
                             let percentage = (Math.round((global / global_total * 100) * 100) / 100).toFixed(2);
                             if (percentage > progressInt && percentage < progressInt + 20) {
                                 message.channel.send(`${progressInt}% des fichiers analysés`).then(msg => {
@@ -467,7 +553,7 @@ exports.run = (client, message) => {
 
                 files.forEach(file_dir => {
 
-                    dirPromises.push(read_single_folder(file_dir, part, false));
+                    dirPromises.push(read_single_folder(path, file_dir, part, false));
 
                 });
 
