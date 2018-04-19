@@ -36,7 +36,16 @@ exports.run = (client, message) => {
     }
     console.log(command);
 
-    if (command[0] === 'dr2') {
+    if (command[0] === 'dr1') {
+
+        let cleaned_command = command[1].toLowerCase().trim();
+        if (cleaned_command === 'récurrente' || cleaned_command.startsWith('rec') || cleaned_command.startsWith('réc')) {
+
+            //fs.readFile("../../Danganronpa traduction FR/Super_Duper_Script_Editor/SDSE.csv")
+
+        }
+
+    } else if (command[0] === 'dr2') {
 
         let cleaned_command = command[1].toLowerCase().trim();
         if (cleaned_command === "récurrente" || cleaned_command.startsWith("rec") || cleaned_command.startsWith("réc")) {
@@ -329,7 +338,9 @@ exports.run = (client, message) => {
             function getrevsPromise(file_path) {
                 return new Promise((resolve, reject) => {
                     get_revisions(file_path, (err, revisions) => {
-                        if (err) reject(err);
+                        if (err) {
+                            reject(err);
+                        }
                         resolve(revisions);
                     });
                 });
@@ -381,9 +392,11 @@ exports.run = (client, message) => {
                                     }
                                 }
                             });
-                            console.log('done');
                         });
                     });
+
+                    console.log(statistics);
+
                 }).catch(console.error);
             }).catch(console.error);
 

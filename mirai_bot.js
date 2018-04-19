@@ -14,8 +14,10 @@ const check_message = require("./functions/parsing_functions").check_message;
 const userProvider = new EnmapLevel({name: 'memberXP'});
 client.memberXP = new Enmap({provider: userProvider});
 
+const cooldownUserProvider = new EnmapLevel({name: 'userCooldown'});
+client.userCooldown = new Enmap({provider: cooldownUserProvider});
+
 client.on('ready', () => {
-    console.log('I am ready!');
 
 });
 
@@ -105,7 +107,7 @@ function set_monokuma_announcement() {
         }
 
         let date = new Date();
-        let UTChour = date.getUTCHours() + 1;
+        let UTChour = date.getUTCHours() + 2;
 
         if (UTChour === 7) {
             console.log("Morning interval found");
@@ -179,7 +181,7 @@ function set_hour_interval() {
     hour_interval = setInterval(function () {
 
         let date = new Date();
-        let UTChour = date.getUTCHours() + 1;
+        let UTChour = date.getUTCHours() + 2;
 
         if (UTChour === 0) {
             console.log("Day interval found");
@@ -204,7 +206,7 @@ function check_birthday() {
     let day = date.getDate() + 1;
     let month = date.getMonth() + 1;
 
-    if (((date.getUTCHours() + 1) % 24 === 0 && date.getUTCMinutes() === 0)) {
+    if (((date.getUTCHours() + 2) % 24 === 0 && date.getUTCMinutes() === 0)) {
         if (!fs.existsSync(fileName)) {
             console.error("Aucun anniversaire enregistré.");
         } else {

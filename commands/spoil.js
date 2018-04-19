@@ -125,7 +125,7 @@ exports.run = (client, message) => {
         msg.addField("Message spoil (ajoutez une réaction pour voir le message)", spoiler_message.msg_w_tag);
         if (message.member)
             msg.setColor(message.member.displayColor);
-        msg.setFooter(`Le message sera scellé le ${date.getUTCDate() + 1}/${date.getUTCMonth() + 1} à ${date.getUTCHours() + 1}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s`);
+        msg.setFooter(`Le message sera scellé le ${date.getUTCDate() + 1}/${date.getUTCMonth() + 1} à ${date.getUTCHours() + 2}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s`);
         message.channel.send(msg).then((msg) => {
 
             const collector = msg.createReactionCollector(

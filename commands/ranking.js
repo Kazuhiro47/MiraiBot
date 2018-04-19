@@ -52,6 +52,9 @@ exports.run = (client, message) => {
         target = find_highest(client, membersXP);
 
         let mem = message.guild.members.find("id", target.id);
+        if (!mem) {
+            continue;
+        }
         msg.addField(`**${i + 1}** *${mem.displayName}*`, `**${target.xp.toFixed(0)}** fragments d'espoir`, true);
 
         i += 1;
