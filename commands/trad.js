@@ -1,4 +1,6 @@
 const Discord = require('discord.js');
+const DanganronpaTranslation = require("../functions/translation_statistics").DanganronpaTranslation;
+const getrevsPromise = require("../functions/dropbox").getrevsPromise;
 const get_file_data = require("../functions/dropbox").get_file_data;
 const RichEmbed = require("discord.js").RichEmbed;
 const get_revisions = require("../functions/dropbox").get_revisions;
@@ -42,6 +44,18 @@ exports.run = (client, message) => {
         if (cleaned_command === 'récurrente' || cleaned_command.startsWith('rec') || cleaned_command.startsWith('réc')) {
 
             //fs.readFile("../../Danganronpa traduction FR/Super_Duper_Script_Editor/SDSE.csv")
+
+        }
+
+        if (cleaned_command === "stat") {
+
+            let stat = new DanganronpaTranslation(client, message);
+
+            stat.get_dr1_stat().then((res) => {
+
+                console.log(res);
+
+            }).catch(console.error);
 
         }
 
@@ -334,17 +348,6 @@ exports.run = (client, message) => {
             message.channel.send("Calcul en cours...").catch(console.error);
 
             let statistics = {};
-
-            function getrevsPromise(file_path) {
-                return new Promise((resolve, reject) => {
-                    get_revisions(file_path, (err, revisions) => {
-                        if (err) {
-                            reject(err);
-                        }
-                        resolve(revisions);
-                    });
-                });
-            }
 
             readDirectory(path, 'utf8').then(files => {
 

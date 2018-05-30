@@ -59,8 +59,40 @@ function get_file_data(path) {
     });
 }
 
+let get_revisions_stats = (path) => new Promise((resolve, reject) => {
+
+    dbx.filesListRevisions({path: path}).then(response => {
+
+        let promises = [];
+
+        response.entries.forEach(revision => {
+            promises.push(dbx.usersGetAccount({account_id: revision.sharing_info.modified_by}));
+        });
+
+        return Promise.all(promises);
+    }).then(accounts => {
+
+        let revlist = [];
+
+        accounts.forEach(account => {
+            let rev = new Revision();
+
+            rev.modifier_name = {
+                name: account.name.display_name,
+                email: account.email
+            };
+            revlist.push(rev);
+        });
+
+        resolve(revlist);
+    }).catch(err => {
+        reject(err);
+    });
+
+});
+
 /**
- * This function gets all the revisions of a dropbox file from its path in dropbox directory
+ * This function gets all the revisions of a dropbox file from its path in dropbox directory for DR2 files
  * @param path : String path from root directory of dropbox folder
  * @param callback : function function when get_revisions is done with those parameters => (err, revisions)
  */
@@ -112,6 +144,8 @@ function get_revisions(path, callback) {
                 }, (err) => {
                     pending -= 1;
                     console.error(err);
+                }).catch(err => {
+                    console.error(err);
                 });
                 pending -= 1;
             }).catch(console.error);
@@ -124,6 +158,17 @@ function get_file_events() {
 
 }
 
+function getrevsPromise(file_path) {
+    return new Promise((resolve, reject) => {
+        get_revisions(file_path, (err, revisions) => {
+            if (err) {
+                reject(err);
+            }
+            resolve(revisions);
+        });
+    });
+}
+
 module.exports = {
-    get_revisions, get_file_data
+    get_revisions, get_file_data, getrevsPromise, get_revisions_stats
 };

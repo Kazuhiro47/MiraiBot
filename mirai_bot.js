@@ -14,6 +14,9 @@ const check_message = require("./functions/parsing_functions").check_message;
 const userProvider = new EnmapLevel({name: 'memberXP'});
 client.memberXP = new Enmap({provider: userProvider});
 
+const SDSE2Provider = new EnmapLevel({name: 'SDSE2Data'});
+client.SDSE2Data = new Enmap({provider: SDSE2Provider});
+
 const cooldownUserProvider = new EnmapLevel({name: 'userCooldown'});
 client.userCooldown = new Enmap({provider: cooldownUserProvider});
 
@@ -127,20 +130,18 @@ function set_monokuma_announcement() {
 function set_morning_day_interval() {
     const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
 
-    generalChannelMiraiTeam.send("Bonjour, tout le monde ! Il est maintenant 7h du matin\n" +
+    const morning_message = "Bonjour, tout le monde ! Il est maintenant 7h du matin\n" +
         "et la période de nuit est officiellement terminée !\n" +
         "Il est l'heure de se lever !\n" +
         "\n" +
-        "Préparez-vous à accueillir un autre jour meeeeerveilleux !").catch(console.error);
+        "Préparez-vous à accueillir un autre jour meeeeerveilleux !";
+
+    generalChannelMiraiTeam.send(morning_message).catch(console.error);
 
     setInterval(() => {
 
 
-        generalChannelMiraiTeam.send("Bonjour, tout le monde ! Il est maintenant 7h du matin\n" +
-            "et la période de nuit est officiellement terminée !\n" +
-            "Il est l'heure de se lever !\n" +
-            "\n" +
-            "Préparez-vous à accueillir un autre jour meeeeerveilleux !").catch(console.error);
+        generalChannelMiraiTeam.send(morning_message).catch(console.error);
 
     }, 60000 * 60 * 24);
 }
@@ -148,26 +149,20 @@ function set_morning_day_interval() {
 function set_evening_interval() {
     const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
 
-    generalChannelMiraiTeam.send("Mm, ahem, ceci est une annonce du serveur.\n" +
-        "Il est maintenant 22h.\n" +
+    const evening_message = "Mm, ahem, ceci est une annonce de l'école.\n" +
+        "Il est maintenant 22 h.\n" +
         "\n" +
         "Autrement dit, c'est officiellement la période de nuit.\n" +
         "Les salons discord vont bientôt être fermés, et y discuter à \n" +
         "partir de maintenant est strictement interdit.\n" +
-        "Maintenant... faîtes de beaux rêves ! Bonne nuit, dormez\n" +
-        "profondément, ne laissez pas les punaises vous mordre...").catch(console.error);
+        "Maintenant, faites de beaux rêves ! Le marchand de sable va bientôt passer...";
+
+    generalChannelMiraiTeam.send(evening_message).catch(console.error);
 
     setInterval(() => {
 
 
-        generalChannelMiraiTeam.send("Mm, ahem, ceci est une annonce du serveur.\n" +
-            "Il est maintenant 22h.\n" +
-            "\n" +
-            "Autrement dit, c'est officiellement la période de nuit.\n" +
-            "Les salons discord vont bientôt être fermés, et y discuter à \n" +
-            "partir de maintenant est strictement interdit.\n" +
-            "Maintenant... faîtes de beaux rêves ! Bonne nuit, dormez\n" +
-            "profondément, ne laissez pas les punaises vous mordre...").catch(console.error);
+        generalChannelMiraiTeam.send(evening_message).catch(console.error);
 
     }, 60000 * 60 * 24);
 

@@ -13,6 +13,9 @@ exports.run = (client, message, args) => {
             }).catch(console.error);
 
         });
+    } else {
+        message.delete().catch(console.error);
+        message.author.send("Tu n'as pas la permission de supprimer les messages avec le bot.").catch(console.error);
     }
 
 };
