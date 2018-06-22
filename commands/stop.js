@@ -5,7 +5,7 @@ exports.run = (client, message) => {
     if (bot_data.bot_values.bot_owners.includes(message.author.id)) {
 
         const { exec } = require('child_process');
-        exec('pm2 stop Mirai_Bot', (err, stdout, stderr) => {
+        exec('pm2 stop mirai_bot', (err, stdout, stderr) => {
             if (err) {
                 console.log("Couldn't stop bot");
                 message.channel.send("Le stop a échoué.").catch(console.error);

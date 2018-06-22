@@ -38,6 +38,78 @@ module.exports = {
             }
         }
 
+        if (message.author.id !== bot_data.bot_values.bot_id) {
+
+            let check_bad_words = () => new Promise((resolve, reject) => {
+
+                let ctnt = message.content.toLowerCase().trim();
+
+                const short_bad_words = ['tg', 'pd'];
+
+                let lol = false;
+
+                short_bad_words.forEach(shortBadWord => {
+                    if (ctnt.endsWith(" " + shortBadWord) || ctnt.startsWith(shortBadWord + " ")) {
+
+                        ctnt = ctnt.replace(shortBadWord, '||');
+                        lol = true;
+                    }
+                });
+
+                if (lol) {
+                    message.delete().then(msg => {
+
+                        msg.channel.send(new RichEmbed().setAuthor(msg.member.displayName, msg.author.avatarURL)
+                            .setDescription(ctnt)
+                        ).catch(console.error);
+
+                    }).catch(console.error);
+                }
+
+                if (ctnt === "tg" || ctnt === 'pd') {
+                    message.delete().then(msg => {
+
+                        msg.channel.send(new RichEmbed().setAuthor(msg.member.displayName, msg.author.avatarURL)
+                            .setDescription("||")
+                        ).catch(console.error);
+
+                    }).catch(console.error);
+                    return reject(true);
+                }
+
+                const bad_words = ["ta gueule", "salope", "pute", " tg "];
+
+                let yes = false;
+
+                bad_words.forEach(bad_word => {
+                    if (message.content.includes(bad_word)) {
+                        ctnt = ctnt.replace(bad_word, '|||||||');
+                        yes = true;
+                    }
+                });
+
+                if (yes) {
+                    resolve(ctnt);
+                } else {
+                    reject(true);
+                }
+
+            });
+
+            check_bad_words().then(ctnt => {
+                message.delete().then(msg => {
+
+                    msg.channel.send(new RichEmbed().setAuthor(msg.member.displayName, msg.author.avatarURL)
+                        .setColor(msg.member.displayColor)
+                        .setDescription(ctnt)
+                    ).catch(console.error);
+
+                }).catch(console.error);
+            }).catch(() => {
+                return;
+            })
+        }
+
     },
 
     check_xp: (client, message) => {
@@ -94,6 +166,11 @@ module.exports = {
     get_random_index: function (array) {
         if (array.length === 1) return (0);
         return (Math.floor(Math.random() * array.length));
+    },
+
+    get_random_in_array: (array) => {
+        if (array.length === 1) return (array[0]);
+        return (array[Math.floor(Math.random() * array.length)]);
     }
 
 };

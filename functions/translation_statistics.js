@@ -106,10 +106,12 @@ class DanganronpaTranslation {
     constructor(client, message) {
         this.client = client;
         this.message = message;
-        this.channel = message.channel;
-        this.author = message.author;
-        if (message.member) {
-            this.member = message.member;
+        if (message !== undefined) {
+            this.channel = message.channel;
+            this.author = message.author;
+            if (message.member) {
+                this.member = message.member;
+            }
         }
         this.log_msg = undefined;
 
@@ -150,22 +152,28 @@ class DanganronpaTranslation {
         return new Promise((resolve, reject) => {
 
             let tab = Object.keys(this.dr1Stats.parts);
-            let i = 0;
 
-            function lol(obj, part) {
-                obj.handle_directories(part, obj.dr1Stats.parts[part]).then(() => {
-                    i++;
+            /*let promises = [];
+            tab.forEach(part => {
+                promises.push(this.handle_directories(part, this.dr1Stats.parts[part]));
+            });
 
-                    if (i !== tab.length) {
-                        return lol(obj, tab[i]);
-                    } else {
-                        resolve(true);
-                    }
+            Promise.all(promises).then(() => {
+                resolve(true);
+            }).catch(err => reject(err));*/
 
-                }).catch(err => reject(err));
+            async function run(obj, array_of_dir) {
+                let i = 0;
+
+                while (i < array_of_dir.length) {
+                    console.log(tab[i]);
+                    await obj.handle_directories(tab[i], obj.dr1Stats.parts[tab[i]]);
+                    console.log(`${tab[i]} DONE`);
+                    i += 1;
+                }
             }
 
-            lol(this, tab[i]);
+            run(this, tab).then(() => resolve(true)).catch(console.error);
 
         });
     }
@@ -203,21 +211,17 @@ class DanganronpaTranslation {
 
             run(dirArray).then(() => resolve(true)).catch(err => reject(err));*/
 
-            let i = 0;
 
-            function doit(obj, dir) {
-                obj.handle_dir(part, dir).then(() => {
-                    i++;
-                    if (i !== dirArray.length) {
-                        return doit(obj, dir);
-                    } else {
-                        resolve(true);
-                    }
+            async function doit(obj) {
+                let i = 0;
 
-                }).catch(err => reject(err));
+                while (i < dirArray.length) {
+                    await obj.handle_dir(part, dirArray[i]);
+                    i += 1;
+                }
             }
 
-            doit(this, dirArray[i]);
+            doit(this).then(() => resolve(true)).catch(console.error);
         });
     }
 
@@ -288,11 +292,11 @@ class DanganronpaTranslation {
                         if (!(part in this.dr1Stats.stats[revision.modifier_name.name])) {
                             this.dr1Stats.stats[revision.modifier_name.name][part] = 1;
                         } else {
-                            this.dr1Stats.stats[revision.modifier_name.name][part] += 1
+                            this.dr1Stats.stats[revision.modifier_name.name][part] += 1;
                         }
                     }
                 });
-                this.log();
+                this.log().catch(console.error);
                 resolve(true);
             }).catch(err => {
                 console.error(err);
@@ -317,10 +321,12 @@ class DanganronpaTranslation {
 
         });
         console.log(msg + '\n-----------------------------\n-----------------------------\n');
-        if (this.log_msg === undefined) {
+        if (this.log_msg === undefined && this.channel !== undefined) {
             this.log_msg = await this.channel.send(msg);
         } else {
-            this.log_msg.edit(msg);
+            if (this.log_msg !== undefined) {
+                this.log_msg.edit(msg).catch(console.error);
+            }
         }
     }
 }

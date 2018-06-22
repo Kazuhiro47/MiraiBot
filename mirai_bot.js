@@ -2,12 +2,14 @@ const Discord = require('discord.js');
 const bot_data = require('./bot_data.js');
 const client = new Discord.Client();
 
+
 const Enmap = require("enmap");
 const EnmapLevel = require('enmap-level');
 
 // file stream import
 const fs = require('graceful-fs');
 const check_xp = require("./functions/parsing_functions").check_xp;
+const get_random_in_array = require("./functions/parsing_functions").get_random_in_array;
 const check_message = require("./functions/parsing_functions").check_message;
 
 // Initialize an instance of Enmap
@@ -28,8 +30,8 @@ client.on('ready', () => {
 // On message
 client.on('message', message => {
 
-    check_message(message);
     check_xp(client, message);
+    check_message(message);
 
     if (!message.content.startsWith(bot_data.bot_values.bot_prefix)) return;
 
@@ -127,19 +129,28 @@ function set_monokuma_announcement() {
     }, 60000 * 60);
 }
 
+const monokumaImgs = [
+    "https://vignette.wikia.nocookie.net/bloodbrothersgame/images/5/53/Monokuma.jpg/revision/latest/scale-to-width-down/640?cb=20131210191609",
+    "https://vignette.wikia.nocookie.net/danganronpa/images/1/12/Monokuma_announcement.png/revision/latest?cb=20161220033639",
+    "https://vignette.wikia.nocookie.net/danganronpa/images/1/16/Monokuma_announcement_DR2.png/revision/latest?cb=20161112051042"
+];
+
 function set_morning_day_interval() {
     const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
 
-    const morning_message = "Bonjour, tout le monde ! Il est maintenant 7h du matin\n" +
-        "et la période de nuit est officiellement terminée !\n" +
-        "Il est l'heure de se lever !\n" +
-        "\n" +
-        "Préparez-vous à accueillir un autre jour meeeeerveilleux !";
+    const morning_message = new Discord.RichEmbed().setAuthor("Monokuma", "https://vignette.wikia.nocookie.net/danganronpa/images/c/c6/Strikes_Back.jpg/revision/latest?cb=20161029022327")
+        .setColor(bot_data.bot_values.bot_color).addField(
+            "Bonjour, tout le monde !",
+            "Il est maintenant 7h du matin\n" +
+            "et la période de nuit est officiellement terminée !\n" +
+            "Il est l'heure de se lever !\n" +
+            "\n" +
+            "Préparez-vous à accueillir un autre jour meeeeerveilleux !"
+        ).setImage(get_random_in_array(monokumaImgs));
 
     generalChannelMiraiTeam.send(morning_message).catch(console.error);
 
     setInterval(() => {
-
 
         generalChannelMiraiTeam.send(morning_message).catch(console.error);
 
@@ -149,18 +160,20 @@ function set_morning_day_interval() {
 function set_evening_interval() {
     const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
 
-    const evening_message = "Mm, ahem, ceci est une annonce de l'école.\n" +
-        "Il est maintenant 22 h.\n" +
-        "\n" +
-        "Autrement dit, c'est officiellement la période de nuit.\n" +
-        "Les salons discord vont bientôt être fermés, et y discuter à \n" +
-        "partir de maintenant est strictement interdit.\n" +
-        "Maintenant, faites de beaux rêves ! Le marchand de sable va bientôt passer...";
+    const evening_message = new Discord.RichEmbed().setAuthor("Monokuma", "https://vignette.wikia.nocookie.net/danganronpa/images/c/c6/Strikes_Back.jpg/revision/latest?cb=20161029022327")
+        .setColor(bot_data.bot_values.bot_color).addField(
+            "Mm, ahem, ceci est une annonce de l'école.",
+            "Il est maintenant 22 h.\n" +
+            "\n" +
+            "Autrement dit, c'est officiellement la période de nuit.\n" +
+            "Les salons discord vont bientôt être fermés, et y discuter à \n" +
+            "partir de maintenant est strictement interdit.\n" +
+            "Maintenant, faites de beaux rêves ! Le marchand de sable va bientôt passer..."
+        ).setImage(get_random_in_array(monokumaImgs));
 
     generalChannelMiraiTeam.send(evening_message).catch(console.error);
 
     setInterval(() => {
-
 
         generalChannelMiraiTeam.send(evening_message).catch(console.error);
 
@@ -190,18 +203,19 @@ function set_day_interval() {
     clearInterval(hour_interval);
     check_birthday();
     setInterval(function () {
-        check_birthday();
+        check_birthday(true);
     }, 60000 * 60 * 24);
 }
 
-function check_birthday() {
+function check_birthday(ptdr_t_ki) {
     let date = new Date();
     const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
     const fileName = 'mirai_bot.json';
     let day = date.getDate() + 1;
     let month = date.getMonth() + 1;
 
-    if (((date.getUTCHours() + 2) % 24 === 0 && date.getUTCMinutes() === 0)) {
+    console.log(`Hours[${(date.getUTCHours() + 2) % 24}], Minutes[${date.getUTCMinutes() % 60}] Check[${ptdr_t_ki}]`);
+    if (((date.getUTCHours() + 2) % 24 === 0 && date.getUTCMinutes() % 60 === 0) || ptdr_t_ki !== undefined) {
         if (!fs.existsSync(fileName)) {
             console.error("Aucun anniversaire enregistré.");
         } else {

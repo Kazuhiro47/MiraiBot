@@ -60,9 +60,10 @@ class SDSE2Editor {
 
 exports.run = (client, message) => {
 
-    const command = message.content.slice('/SDSE2 '.length, message.content.length).toLowerCase().trim().split(/ +/g);
+    const command = message.content.toLowerCase().trim().split(/ +/g);
+    let sdse = new SDSE2Editor(message.author, client, message.channel);
 
-    client.SDSE2Data.set(message.author.id, new SDSE2Editor(message.author, client, message.channel));
+    client.SDSE2Data.set(message.author.id, );
 
     let UserSDSE2 = client.SDSE2Data.get(message.author.id);
 
