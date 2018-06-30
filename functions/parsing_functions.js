@@ -38,11 +38,15 @@ module.exports = {
             }
         }
 
-        if (message.author.id !== bot_data.bot_values.bot_id) {
+        /*if (message.author.id !== bot_data.bot_values.bot_id) {
 
             let check_bad_words = () => new Promise((resolve, reject) => {
 
                 let ctnt = message.content.toLowerCase().trim();
+
+                while (ctnt.indexOf('*') !== -1) {
+                    ctnt = ctnt.replace('*', '');
+                }
 
                 const short_bad_words = ['tg', 'pd'];
 
@@ -108,7 +112,7 @@ module.exports = {
             }).catch(() => {
                 return;
             })
-        }
+        }*/
 
     },
 
