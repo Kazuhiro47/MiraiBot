@@ -117,53 +117,72 @@ module.exports = {
     },
 
     check_xp: (client, message) => {
-        let memberXPData = client.memberXP.get(message.author.id);
 
-        if (!memberXPData) {
-            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-            memberXPData = client.memberXP.get(message.author.id);
-        }
+        if (message.author.id !== bot_data.bot_values.bot_id) {
+            let memberXPData = client.memberXP.get(message.author.id);
+
+            if (!memberXPData) {
+                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                memberXPData = client.memberXP.get(message.author.id);
+            }
+
+            if (message.member.roles.find('name', "Robot Ultime")) {
+                memberXPData.xp = 0;
+                client.memberXP.set(message.author.id, memberXPData);
+                return;
+            }
 
 
-        let palier_reached = memberXPData.level;
+            let palier_reached = memberXPData.level;
 
-        memberXPData.xp += message.content.length / 10;
+            memberXPData.xp += message.content.length / 10;
 
-        Object.keys(bot_data.xp_table).forEach(palier => {
+            Object.keys(bot_data.xp_table).forEach(palier => {
 
-            if (memberXPData.xp > bot_data.xp_table[palier].xp)
-                palier_reached = palier;
-
-        });
-
-        if (palier_reached > memberXPData.level) {
-            memberXPData.level += 1;
-
-            message.channel.send(new RichEmbed()
-                .addField(
-                    `**${message.member.displayName}** est passé à la **Division ${bot_data.xp_table[memberXPData.level].string}**`,
-                    `*${bot_data.xp_table[memberXPData.level].description}*`)
-                .setColor(message.guild.me.displayColor)
-            ).catch(console.error);
-
-            message.guild.roles.array().forEach(role => {
-
-                if (role.name.split(' ')[1] === bot_data.xp_table[memberXPData.level].string) {
-                    if (message.member) {
-                        message.member.addRole(role).catch(err => {
-                            console.error(err);
-                            message.channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
-                        });
-                    } else {
-                        message.channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
-                    }
-                }
+                if (memberXPData.xp > bot_data.xp_table[palier].xp)
+                    palier_reached = palier;
 
             });
 
-        }
+            if (palier_reached > memberXPData.level) {
+                memberXPData.level += 1;
 
-        client.memberXP.set(message.author.id, memberXPData);
+                message.channel.send(new RichEmbed()
+                    .addField(
+                        `**${message.member.displayName}** est passé à la **Division ${bot_data.xp_table[memberXPData.level].string}**`,
+                        `*${bot_data.xp_table[memberXPData.level].description}*`)
+                    .setColor(message.guild.me.displayColor)
+                ).catch(console.error);
+
+                message.guild.roles.array().forEach(role => {
+
+                    if (role.name.split(' ')[1] === bot_data.xp_table[memberXPData.level].string) {
+                        if (message.member) {
+                            message.member.addRole(role).catch(err => {
+                                console.error(err);
+                                message.channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
+                            });
+                        } else {
+                            message.channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
+                        }
+                    }
+
+                });
+
+            }
+
+            client.memberXP.set(message.author.id, memberXPData);
+        } else {
+            let memberXPData = client.memberXP.get(message.author.id);
+
+            if (!memberXPData) {
+                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                memberXPData = client.memberXP.get(message.author.id);
+            }
+
+            memberXPData.xp = 0;
+            client.memberXP.set(message.author.id, memberXPData);
+        }
 
     },
 
