@@ -9,13 +9,18 @@ let askUserIfContinue = (message) => new Promise((resolve, reject) => {
         .addField("Oui", "tapez oui")
         .addField("Non", "tapez non")
         .setColor(bot_data.bot_values.bot_color)
-    ).catch(console.error);
+    ).then(msg => {
+        setTimeout(() => {
+            msg.delete().catch(console.error);
+        }, 20000);
+    }).catch(console.error);
 
     const answer = message.channel.createMessageCollector(m => m.author.id === message.author.id);
 
     let result = false;
 
     answer.on('collect', msg => {
+
         const response = msg.content.trim().toLowerCase();
 
         if (response === 'oui') {
@@ -25,12 +30,22 @@ let askUserIfContinue = (message) => new Promise((resolve, reject) => {
             result = false;
             answer.stop();
         } else {
-            message.channel.send("Veuillez répondre par oui ou non.").catch(console.error);
+            message.channel.send("Veuillez répondre par oui ou non.").then(msg => {
+                setTimeout(() => {
+                    msg.delete().catch(console.error);
+                }, 5000);
+            }).catch(console.error);
         }
     });
 
-    answer.on('end', () => {
-        resolve(result);
+    answer.on('end', (collected) => {
+        let promises = [];
+        collected.forEach(m => {
+            promises.push(m.delete());
+        });
+        Promise.all(promises).then(() => {
+            resolve(result);
+        }).catch(console.error);
     })
 
 });
@@ -41,7 +56,7 @@ let printXpReward = (message, xpNb) => {
         message.channel.send(new RichEmbed()
             .setColor(bot_data.bot_values.bot_color)
             .setAuthor(message.author.username, message.author.avatarURL)
-            .setTitle("Vous avez obtenu " + xpNb.toFixed(1) + " fragments d'espoir !")
+            .setTitle("Vous avez obtenu " + xpNb.toFixed(0) + " fragments d'espoir !")
         ).catch(console.error);
     }
 
@@ -52,11 +67,7 @@ exports.run = (client, message) => {
     const parameters = message.content.trim().toLowerCase().split(/ +/g);
     const q = new Quizz();
 
-    let memberXPData = client.memberXP.get(message.author.id);
-    if (!memberXPData) {
-        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-        memberXPData = client.memberXP.get(message.author.id);
-    }
+    console.log(parameters);
 
     if (parameters.length > 1) {
 
@@ -64,9 +75,16 @@ exports.run = (client, message) => {
             if (parameters.length === 2) {
 
                 q.hiraganaBasic(message).then((xp) => {
+                    let memberXPData = client.memberXP.get(message.author.id);
+                    if (!memberXPData) {
+                        console.log("Xp undefined");
+                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                        memberXPData = client.memberXP.get(message.author.id);
+                    }
                     memberXPData.xp += xp;
                     client.memberXP.set(message.author.id, memberXPData);
                     printXpReward(message, xp);
+                    q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
@@ -75,30 +93,77 @@ exports.run = (client, message) => {
                         return new Promise((resolve, reject) => reject(true));
                     }
                 }).then((xp) => {
+                    let memberXPData = client.memberXP.get(message.author.id);
+                    if (!memberXPData) {
+                        console.log("Xp undefined");
+                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                        memberXPData = client.memberXP.get(message.author.id);
+                    }
                     memberXPData.xp += xp;
                     client.memberXP.set(message.author.id, memberXPData);
                     printXpReward(message, xp);
+                    q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
                         q.hiraganaPalatalised(message).then(xp => {
+                            let memberXPData = client.memberXP.get(message.author.id);
+                            if (!memberXPData) {
+                                console.log("Xp undefined");
+                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                                memberXPData = client.memberXP.get(message.author.id);
+                            }
                             memberXPData.xp += xp;
                             client.memberXP.set(message.author.id, memberXPData);
                             printXpReward(message, xp);
+                            q.resetStats();
                         });
                     } else {
                         return new Promise((resolve, reject) => reject(true));
                     }
-                }).catch(() => {});
+                }).catch(() => {
+                });
 
             } else if (parameters.length >= 3) {
 
                 if (parameters[2] === 'all') {
                     q.hiraganaAll(message).then(xp => {
-                        memberXPData += xp;
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            console.log("Xp undefined");
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
                         client.memberXP.set(message.author.id, memberXPData);
                         printXpReward(message, xp);
+                        q.resetStats();
                     }).catch(console.error);
+                } else if (parameters[2] === "débutant") {
+
+                    let doBegginerHiragana = async () => {
+                        let xp;
+                        for (let i = 1 ; i <= 10 ; i++) {
+                            xp = await q.hiraganaBegginer(message, i);
+                            q.resetStats();
+                            let memberXPData = client.memberXP.get(message.author.id);
+                            if (!memberXPData) {
+                                console.log("Xp undefined");
+                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                                memberXPData = client.memberXP.get(message.author.id);
+                            }
+                            console.log(memberXPData);
+                            memberXPData.xp += xp;
+                            client.memberXP.set(message.author.id, memberXPData);
+                            printXpReward(message, xp);
+                            if (await askUserIfContinue(message) === false) {
+                                return;
+                            }
+                        }
+                    };
+
+                    doBegginerHiragana().catch(console.error);
+
                 }
 
             }
@@ -107,9 +172,16 @@ exports.run = (client, message) => {
             if (parameters.length === 2) {
 
                 q.katakanaBasic(message).then((xp) => {
+                    let memberXPData = client.memberXP.get(message.author.id);
+                    if (!memberXPData) {
+                        console.log("Xp undefined");
+                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                        memberXPData = client.memberXP.get(message.author.id);
+                    }
                     memberXPData.xp += xp;
                     client.memberXP.set(message.author.id, memberXPData);
                     printXpReward(message, xp);
+                    q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
@@ -118,42 +190,93 @@ exports.run = (client, message) => {
                         return new Promise((resolve, reject) => reject(true));
                     }
                 }).then((xp) => {
+                    let memberXPData = client.memberXP.get(message.author.id);
+                    if (!memberXPData) {
+                        console.log("Xp undefined");
+                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                        memberXPData = client.memberXP.get(message.author.id);
+                    }
                     memberXPData.xp += xp;
                     client.memberXP.set(message.author.id, memberXPData);
+                    q.resetStats();
                     printXpReward(message, xp);
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
                         q.katakanaPalatalised(message).then(xp => {
+                            let memberXPData = client.memberXP.get(message.author.id);
+                            if (!memberXPData) {
+                                console.log("Xp undefined");
+                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                                memberXPData = client.memberXP.get(message.author.id);
+                            }
                             memberXPData.xp += xp;
                             client.memberXP.set(message.author.id, memberXPData);
+                            q.resetStats();
                             printXpReward(message, xp);
                         });
                     } else {
                         return new Promise((resolve, reject) => reject(true));
                     }
-                }).catch(() => {});
+                }).catch(() => {
+                });
 
             } else if (parameters.length >= 3) {
 
                 if (parameters[2] === 'all') {
                     q.katakanaAll(message).then(xp => {
-                        memberXPData += xp;
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            console.log("Xp undefined");
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
                         client.memberXP.set(message.author.id, memberXPData);
+                        q.resetStats();
                         printXpReward(message, xp);
                     }).catch(console.error);
+                } else if (parameters[2] === 'débutant') {
+                    let doIt = async () => {
+                        let xp;
+                        for (let i = 1 ; i <= 10 ; i++) {
+                            xp = await q.katakanaBegginer(message, i);
+                            q.resetStats();
+                            let memberXPData = client.memberXP.get(message.author.id);
+                            if (!memberXPData) {
+                                console.log("Xp undefined");
+                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                                memberXPData = client.memberXP.get(message.author.id);
+                            }
+                            memberXPData.xp += xp;
+                            client.memberXP.set(message.author.id, memberXPData);
+                            printXpReward(message, xp);
+                            if (await askUserIfContinue(message) === false) {
+                                return;
+                            }
+                        }
+                    };
+
+                    doIt().catch(console.error);
                 }
 
             }
 
-        } else if (parameters[1] === 'general') {
+        } else if (parameters[1] === 'kanas') {
 
             if (parameters.length === 2) {
 
                 q.allBasic(message).then((xp) => {
+                    let memberXPData = client.memberXP.get(message.author.id);
+                    if (!memberXPData) {
+                        console.log("Xp undefined");
+                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                        memberXPData = client.memberXP.get(message.author.id);
+                    }
                     memberXPData.xp += xp;
                     client.memberXP.set(message.author.id, memberXPData);
                     printXpReward(message, xp);
+                    q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
@@ -162,47 +285,175 @@ exports.run = (client, message) => {
                         return new Promise((resolve, reject) => reject(true));
                     }
                 }).then((xp) => {
+                    let memberXPData = client.memberXP.get(message.author.id);
+                    if (!memberXPData) {
+                        console.log("Xp undefined");
+                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                        memberXPData = client.memberXP.get(message.author.id);
+                    }
                     memberXPData.xp += xp;
                     client.memberXP.set(message.author.id, memberXPData);
                     printXpReward(message, xp);
+                    q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
                         q.allPalatalised(message).then(xp => {
+                            let memberXPData = client.memberXP.get(message.author.id);
+                            if (!memberXPData) {
+                                console.log("Xp undefined");
+                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                                memberXPData = client.memberXP.get(message.author.id);
+                            }
                             memberXPData.xp += xp;
                             client.memberXP.set(message.author.id, memberXPData);
                             printXpReward(message, xp);
+                            q.resetStats();
                         });
                     } else {
                         return new Promise((resolve, reject) => reject(true));
                     }
-                }).catch(() => {});
+                }).catch(() => {
+                });
 
             } else if (parameters.length >= 3) {
 
                 if (parameters[2] === 'all') {
                     q.allAll(message).then(xp => {
-                        memberXPData += xp;
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            console.log("Xp undefined");
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
                         client.memberXP.set(message.author.id, memberXPData);
                         printXpReward(message, xp);
+                        q.resetStats();
                     }).catch(console.error);
+                } else if (parameters[2] === 'débutant') {
+                    let doIt = async () => {
+                        let xp;
+                        for (let i = 1 ; i <= 10 ; i++) {
+                            xp = await q.allBegginer(message, i);
+                            q.resetStats();
+                            let memberXPData = client.memberXP.get(message.author.id);
+                            if (!memberXPData) {
+                                console.log("Xp undefined");
+                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                                memberXPData = client.memberXP.get(message.author.id);
+                            }
+                            memberXPData.xp += xp;
+                            client.memberXP.set(message.author.id, memberXPData);
+                            printXpReward(message, xp);
+                            if (await askUserIfContinue(message) === false) {
+                                return;
+                            }
+                        }
+                    };
+
+                    doIt().catch(console.error);
                 }
 
             }
 
+        } else if (parameters[1] === 'kanjis') {
+            if (parameters.length === 3) {
+                if (parameters[2] === "jlpt5") {
+                    q.JLPT5(message).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            console.log("Xp undefined");
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        q.resetStats();
+                        printXpReward(message, xp);
+                    }).catch(console.error);
+                } else if (parameters[2] === "jlpt4") {
+                    q.JLPT4(message).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            console.log("Xp undefined");
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        printXpReward(message, xp);
+                        q.resetStats();
+                    }).catch(console.error);
+                } else if (parameters[2] === "jlpt3") {
+                    q.JLPT3(message).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            console.log("Xp undefined");
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        printXpReward(message, xp);
+                        q.resetStats();
+                    }).catch(console.error);
+                } else if (parameters[2] === "jlpt2") {
+                    q.JLPT2(message).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            console.log("Xp undefined");
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        printXpReward(message, xp);
+                        q.resetStats();
+                    }).catch(console.error);
+                } else if (parameters[2] === "jlpt1") {
+                    q.JLPT1(message).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            console.log("Xp undefined");
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        printXpReward(message, xp);
+                        q.resetStats();
+                    }).catch(console.error);
+                }
+            }
         }
 
     } else {
         message.channel.send(new RichEmbed().setTitle("Erreur commande Quizz")
             .setColor(bot_data.bot_values.bot_color)
-            .addField("Commandes disponibles",
-            "/quizz hiragana\n" +
-            "/quizz katakana\n" +
-            "/quizz general\n" +
-            "/quizz hiragana all\n" +
-            "/quizz katakana all\n" +
-            "/quizz general all\n"
-        )).catch(console.error);
+            .addField("Hiragana",
+                "/quizz hiragana débutant\n" +
+                "/quizz hiragana\n" +
+                "/quizz hiragana all\n"
+                , true)
+            .addField("Katakana",
+                "/quizz katakana débutant\n" +
+                "/quizz katakana\n" +
+                "/quizz katakana all\n"
+            , true)
+            .addField("Kanas",
+                "/quizz kanas débutant\n" +
+                "/quizz kanas\n" +
+                "/quizz kanas all\n"
+                , true)
+            .addField("Kanjis",
+                "/quizz kanjis JLPT5\n" +
+                "/quizz kanjis JLPT4\n" +
+                "/quizz kanjis JLPT3\n" +
+                "/quizz kanjis JLPT2\n" +
+                "/quizz kanjis JLPT1\n"
+                , true)
+        ).catch(console.error);
     }
 
 };

@@ -51,8 +51,14 @@ exports.run = (client, message, args) => {
         if (!memberXPData) {
 
             client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+            memberXPData = client.memberXP.get(message.author.id);
+            if (!"xp" in memberXPData) {
+                memberXPData["xp"] = 0;
+            }
 
         }
+
+        console.log(memberXPData);
 
         msg.setAuthor(message.member.displayName, message.author.displayAvatarURL)
             .setColor(message.member.displayColor)

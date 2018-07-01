@@ -126,13 +126,6 @@ module.exports = {
                 memberXPData = client.memberXP.get(message.author.id);
             }
 
-            if (message.member.roles.find('name', "Robot Ultime")) {
-                memberXPData.xp = 0;
-                client.memberXP.set(message.author.id, memberXPData);
-                return;
-            }
-
-
             let palier_reached = memberXPData.level;
 
             memberXPData.xp += message.content.length / 10;
@@ -171,16 +164,6 @@ module.exports = {
 
             }
 
-            client.memberXP.set(message.author.id, memberXPData);
-        } else {
-            let memberXPData = client.memberXP.get(message.author.id);
-
-            if (!memberXPData) {
-                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                memberXPData = client.memberXP.get(message.author.id);
-            }
-
-            memberXPData.xp = 0;
             client.memberXP.set(message.author.id, memberXPData);
         }
 

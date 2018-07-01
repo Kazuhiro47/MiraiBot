@@ -86,7 +86,6 @@ class Hiragana extends Kana {
         this.uDakutenHandakuten = {
             'h|gu': 'ぐ',
             'h|zu': 'ず',
-            'h|dzu': 'づ',
             'h|bu': 'ぶ',
             'h|pu': 'ぷ',
         };
@@ -236,7 +235,6 @@ class Katakana extends Kana {
         this.uDakutenHandakuten = {
             'k|gu': 'グ',
             'k|zu': 'ズ',
-            'k|dzu': 'ヅ',
             'k|bu': 'ブ',
             'k|pu': 'プ',
         };
