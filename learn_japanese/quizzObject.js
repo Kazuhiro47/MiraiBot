@@ -1,5 +1,6 @@
 const bot_data = require('../bot_data.js');
-const Kanjis = require("./kanjis").Kanjis;
+const Vocabulary = require("./jlpt").Vocabulary;
+const Kanjis = require("./jlpt").Kanjis;
 const Katakana = require("./kanas").Katakana;
 const Hiragana = require("./kanas").Hiragana;
 const get_random_index = require("../functions/parsing_functions").get_random_index;
@@ -83,7 +84,7 @@ class Quizz {
 
     printResult(message) {
         message.channel.send(new RichEmbed().setAuthor(message.author.username, message.author.avatarURL)
-            .setThumbnail('https://www.seejapan.co.uk/images/default-source/Icon-nav-images/eating-out.png?sfvrsn=0')
+            .setThumbnail('https://www.global.hokudai.ac.jp/wp-content/uploads/2012/11/nihongo.jpg')
             .addField(
                 `Quizz ${this.quizzType} niveau ${this.level}`,
                 `${(this.success / (this.success + this.failure) * 100).toFixed(2)}% de réussite\n${this.success} réponse(s) correcte(s)\n${this.failure} réponse(s) fausse(s).`
@@ -105,14 +106,22 @@ class Quizz {
         let va;
         if (this.quizzType === 'kanji') {
             va = 'signification';
+        } else if (this.quizzType === 'vocabulaire') {
+            va = "signification"
         } else {
             va = 'prononciation';
+        }
+        let vb;
+        if (this.quizzType === "vocabulaire") {
+            vb = "mot";
+        } else {
+            vb = this.quizzType;
         }
         message.channel.send(new RichEmbed()
             .setAuthor(`Question ${this.questionNb}/${this.totalQuestions}`, 'https://wallpapers.wallhaven.cc/wallpapers/full/wallhaven-167911.jpg')
             .setTitle(`Quizz ${this.quizzType} niveau ${this.level}`)
             .setColor(bot_data.bot_values.bot_color)
-            .addField(`**${this.workingData[key]}**`, "Quelle est la " + va + " de ce " + this.quizzType + " ?")
+            .addField(`**${this.workingData[key]}**`, "Quelle est la " + va + " de ce " + vb + " ?")
             .setDescription('Tape stop pour arrêter le quizz'))
             .then(msg => {
                 this.messageList.push(msg);
@@ -413,64 +422,104 @@ class Quizz {
         });
     }
 
-    JLPT5(message) {
+    JLPT5(message, voc) {
         return new Promise((resolve, reject) => {
-            let kanji = new Kanjis();
-            kanji.constructDataBase().then(() => {
-                this.workingData = kanji.JLPTS.JLPT5;
+            let data;
+            if (voc) {
+                data = new Vocabulary();
+                this.quizzType = "vocabulaire";
+            } else {
+                data = new Kanjis();
                 this.quizzType = "kanji";
+            }
+            data.constructDataBase().then(() => {
+                this.workingData = data.JLPTS.JLPT5;
                 this.level = "JLPT5";
                 this.runQuizz(message).then(xp => resolve(xp));
             }).catch(err => reject(err));
         })
     }
 
-    JLPT4(message) {
+    JLPT4(message, voc) {
         return new Promise((resolve, reject) => {
-            let kanji = new Kanjis();
-            kanji.constructDataBase().then(() => {
-                this.workingData = kanji.JLPTS.JLPT4;
+            let data;
+            if (voc) {
+                data = new Vocabulary();
+                this.quizzType = "vocabulaire";
+            } else {
+                data = new Kanjis();
                 this.quizzType = "kanji";
+            }
+            data.constructDataBase().then(() => {
+                this.workingData = data.JLPTS.JLPT4;
                 this.level = "JLPT4";
                 this.runQuizz(message).then(xp => resolve(xp));
             }).catch(err => reject(err));
         })
     }
 
-    JLPT3(message) {
+    JLPT3(message, voc) {
         return new Promise((resolve, reject) => {
-            let kanji = new Kanjis();
-            kanji.constructDataBase().then(() => {
-                this.workingData = kanji.JLPTS.JLPT3;
+            let data;
+            if (voc) {
+                data = new Vocabulary();
+                this.quizzType = "vocabulaire";
+            } else {
+                data = new Kanjis();
                 this.quizzType = "kanji";
+            }
+            data.constructDataBase().then(() => {
+                this.workingData = data.JLPTS.JLPT3;
                 this.level = "JLPT3";
                 this.runQuizz(message).then(xp => resolve(xp));
             }).catch(err => reject(err));
         })
     }
 
-    JLPT2(message) {
+    JLPT2(message, voc) {
         return new Promise((resolve, reject) => {
-            let kanji = new Kanjis();
-            kanji.constructDataBase().then(() => {
-                this.workingData = kanji.JLPTS.JLPT2;
+            let data;
+            if (voc) {
+                data = new Vocabulary();
+                this.quizzType = "vocabulaire";
+            } else {
+                data = new Kanjis();
                 this.quizzType = "kanji";
+            }
+            data.constructDataBase().then(() => {
+                this.workingData = data.JLPTS.JLPT2;
                 this.level = "JLPT2";
                 this.runQuizz(message).then(xp => resolve(xp));
             }).catch(err => reject(err));
         })
     }
 
-    JLPT1(message) {
+    JLPT1(message, voc) {
         return new Promise((resolve, reject) => {
-            let kanji = new Kanjis();
-            kanji.constructDataBase().then(() => {
-                this.workingData = kanji.JLPTS.JLPT1;
+            let data;
+            if (voc) {
+                data = new Vocabulary();
+                this.quizzType = "vocabulaire";
+            } else {
+                data = new Kanjis();
                 this.quizzType = "kanji";
+            }
+            data.constructDataBase().then(() => {
+                this.workingData = data.JLPTS.JLPT1;
                 this.level = "JLPT1";
                 this.runQuizz(message).then(xp => resolve(xp));
             }).catch(err => reject(err));
         })
+    }
+
+    answerCorrect(array, answer) {
+        let correct = false;
+        array.forEach(correctAnswer => {
+            if (correctAnswer.includes(answer)) {
+                correct = true;
+            }
+        });
+        return correct;
     }
 
     runQuizz(message) {
@@ -493,13 +542,9 @@ class Quizz {
 
                 const answer = msg.content.trim().toLowerCase();
 
-                console.log(workingArray[index].split('|')[1].split(";")
+                if (this.answerCorrect(workingArray[index].split('|')[1].split(";")
                     .map(Function.prototype.call, String.prototype.trim)
-                    .map(Function.prototype.call, String.prototype.toLowerCase));
-                if (workingArray[index].split('|')[1].split(";")
-                    .map(Function.prototype.call, String.prototype.trim)
-                    .map(Function.prototype.call, String.prototype.toLowerCase)
-                    .includes(answer)) {
+                    .map(Function.prototype.call, String.prototype.toLowerCase), answer)) {
 
                     let test = await message.channel.send(':white_check_mark: ' + workingArray[index].split('|')[1]);
                     this.messageList.push(test);
@@ -535,7 +580,7 @@ class Quizz {
 
                     let test = await message.channel.send(
                         new RichEmbed()
-                            .setTitle(':x: La réponse était **' + workingArray[index].split('|')[1] + "**")
+                            .setTitle(':x: La réponse était ' + workingArray[index].split('|')[1])
                             .setColor(bot_data.bot_values.bot_color)
                     );
                     this.messageList.push(test);

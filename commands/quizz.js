@@ -262,7 +262,7 @@ exports.run = (client, message) => {
 
             }
 
-        } else if (parameters[1] === 'kanas') {
+        } else if (parameters[1] === 'kana') {
 
             if (parameters.length === 2) {
 
@@ -357,7 +357,7 @@ exports.run = (client, message) => {
 
             }
 
-        } else if (parameters[1] === 'kanjis') {
+        } else if (parameters[1] === 'kanji') {
             if (parameters.length === 3) {
                 if (parameters[2] === "jlpt5") {
                     q.JLPT5(message).then(xp => {
@@ -426,10 +426,75 @@ exports.run = (client, message) => {
                     }).catch(console.error);
                 }
             }
+        } else if (parameters[1] === 'vocabulaire') {
+            if (parameters.length === 3) {
+                if (parameters[2] === "jlpt5") {
+                    q.JLPT5(message, true).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        q.resetStats();
+                        printXpReward(message, xp);
+                    }).catch(console.error);
+                } else if (parameters[2] === "jlpt4") {
+                    q.JLPT4(message, true).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        printXpReward(message, xp);
+                        q.resetStats();
+                    }).catch(console.error);
+                } else if (parameters[2] === "jlpt3") {
+                    q.JLPT3(message, true).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        printXpReward(message, xp);
+                        q.resetStats();
+                    }).catch(console.error);
+                } else if (parameters[2] === "jlpt2") {
+                    q.JLPT2(message, true).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        printXpReward(message, xp);
+                        q.resetStats();
+                    }).catch(console.error);
+                } else if (parameters[2] === "jlpt1") {
+                    q.JLPT1(message, true).then(xp => {
+                        let memberXPData = client.memberXP.get(message.author.id);
+                        if (!memberXPData) {
+                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                            memberXPData = client.memberXP.get(message.author.id);
+                        }
+                        memberXPData.xp += xp;
+                        client.memberXP.set(message.author.id, memberXPData);
+                        printXpReward(message, xp);
+                        q.resetStats();
+                    }).catch(console.error);
+                }
+            }
         }
 
     } else {
-        message.channel.send(new RichEmbed().setTitle("Erreur commande Quizz")
+        message.channel.send(new RichEmbed().setTitle("Guide des commandes Quizz")
+            .setDescription("Veuillez tapez au clavier une des commandes ci-dessous")
             .setColor(bot_data.bot_values.bot_color)
             .addField("Hiragana",
                 "/quizz hiragana débutant\n" +
@@ -441,17 +506,24 @@ exports.run = (client, message) => {
                 "/quizz katakana\n" +
                 "/quizz katakana all\n"
             , true)
-            .addField("Kanas",
-                "/quizz kanas débutant\n" +
-                "/quizz kanas\n" +
-                "/quizz kanas all\n"
+            .addField("kana",
+                "/quizz kana débutant\n" +
+                "/quizz kana\n" +
+                "/quizz kana all\n"
                 , true)
-            .addField("Kanjis",
-                "/quizz kanjis JLPT5\n" +
-                "/quizz kanjis JLPT4\n" +
-                "/quizz kanjis JLPT3\n" +
-                "/quizz kanjis JLPT2\n" +
-                "/quizz kanjis JLPT1\n"
+            .addField("kanji",
+                "/quizz kanji JLPT5\n" +
+                "/quizz kanji JLPT4\n" +
+                "/quizz kanji JLPT3\n" +
+                "/quizz kanji JLPT2\n" +
+                "/quizz kanji JLPT1\n"
+                , true)
+            .addField("Vocabulaire",
+                "/quizz vocabulaire JLPT5\n" +
+                "/quizz vocabulaire JLPT4\n" +
+                "/quizz vocabulaire JLPT3\n" +
+                "/quizz vocabulaire JLPT2\n" +
+                "/quizz vocabulaire JLPT1\n"
                 , true)
         ).catch(console.error);
     }
