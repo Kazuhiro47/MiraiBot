@@ -15,6 +15,12 @@ exports.run = (client, message, args) => {
 
             let msg_collected = 42;
 
+            try {
+                chan.fetchMessages({limit:1}).catch(console.error);
+            } catch (e) {
+                console.error(`${chan.type}, ${chan.id}`);
+                resolve(true);
+            }
             chan.fetchMessages({limit: 1}).then(messages => {
                 let message_id = messages.first().id;
 
@@ -146,22 +152,16 @@ exports.run = (client, message, args) => {
 
     }
 
+    let updateXP = async () => {
+        let channels = message.guild.channels.array();
 
-    let promisesAnalyser = [];
+        for (let i = 0 ; i < channels.length ; i++) {
+            await analyse_channel(channels[i], args);
+        }
+    };
 
-    client.channels.array().forEach(channel_obj => {
-        promisesAnalyser.push(analyse_channel(channel_obj, args));
-    });
-
-    Promise.all(promisesAnalyser).then((chans) => {
-
-        chans.forEach(chan => {
-            console.log(chan.name + ' analysed');
-        });
-        console.log("XP UPDATE DONE");
-
-
+    updateXP().then(() => {
+        console.log("Update XP Done !");
     }).catch(console.error);
-
 
 };

@@ -525,6 +525,7 @@ exports.run = (client, message) => {
                 "/quizz vocabulaire JLPT2\n" +
                 "/quizz vocabulaire JLPT1\n"
                 , true)
+            .setImage("https://www.global.hokudai.ac.jp/wp-content/uploads/2012/11/nihongo.jpg")
         ).catch(console.error);
     }
 
