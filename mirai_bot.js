@@ -142,6 +142,10 @@ function set_monokuma_announcement() {
             evening_done = true;
         }
 
+        if (UTChour === 0) {
+            check_birthday();
+        }
+
     }, 60000 * 60);
 }
 
@@ -368,8 +372,8 @@ function check_birthday(ptdr_t_ki) {
     let day = date.getDate() + 1;
     let month = date.getMonth() + 1;
 
-    console.log(`Hours[${(date.getUTCHours() + 2) % 24}], Minutes[${date.getUTCMinutes() % 60}] Check[${ptdr_t_ki}]`);
-    if (((date.getUTCHours() + 2) % 24 === 0 && date.getUTCMinutes() % 60 === 0) || ptdr_t_ki !== undefined) {
+    console.log(`Hours[${(date.getUTCHours() + 2) % 24}], Minutes[${date.getUTCMinutes() % 60}]`);
+    if (date.getUTCHours() + 2 === 0 && date.getMinutes() === 0) {
         if (!fs.existsSync(fileName)) {
             console.error("Aucun anniversaire enregistré.");
         } else {
