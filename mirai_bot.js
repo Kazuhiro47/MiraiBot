@@ -108,7 +108,6 @@ function set_minute_interval() {
         if (UTCminute === 0 || minute === 0) {
             console.log("Hour interval found");
             set_monokuma_announcement();
-            set_hour_interval();
         }
 
     }, 60000);
@@ -120,15 +119,18 @@ function set_monokuma_announcement() {
 
     let morning_done = false;
     let evening_done = false;
+    let day_interval_done = false;
+
+    clearInterval(minute_interval);
 
     monokuma_interval = setInterval(() => {
 
-        if (evening_done && morning_done) {
+        if (evening_done && morning_done && day_interval_done) {
             clearInterval(monokuma_interval);
         }
 
         let date = new Date();
-        let UTChour = date.getUTCHours() + 2;
+        let UTChour = (date.getUTCHours() + 2) % 24;
 
         if (UTChour === 7) {
             console.log("Morning interval found");
@@ -143,7 +145,9 @@ function set_monokuma_announcement() {
         }
 
         if (UTChour === 0) {
-            check_birthday();
+            console.log("Day interval found");
+            set_day_interval();
+            day_interval_done = true;
         }
 
     }, 60000 * 60);
@@ -318,7 +322,9 @@ function set_evening_interval() {
             "Maintenant, faites de beaux rêves ! Le marchand de sable va bientôt passer..."
         ).setImage(get_random_in_array(monokumaImgs));
 
-    analyseLogChan(evening_message, generalChannelMiraiTeam).catch(console.error);
+    generalChannelMiraiTeam.send(evening_message).catch(console.error);
+
+    //analyseLogChan(evening_message, generalChannelMiraiTeam).catch(console.error);
 
     setInterval(() => {
 
@@ -333,39 +339,21 @@ function set_evening_interval() {
                 "Maintenant, faites de beaux rêves ! Le marchand de sable va bientôt passer..."
             ).setImage(get_random_in_array(monokumaImgs));
 
-        analyseLogChan(evening_message, generalChannelMiraiTeam).catch(console.error);
+        generalChannelMiraiTeam.send(evening_message).catch(console.error);
+        //analyseLogChan(evening_message, generalChannelMiraiTeam).catch(console.error);
 
     }, 60000 * 60 * 24);
 
-}
-
-let hour_interval;
-
-function set_hour_interval() {
-    clearInterval(minute_interval);
-    check_birthday();
-    hour_interval = setInterval(function () {
-
-        let date = new Date();
-        let UTChour = date.getUTCHours() + 2;
-
-        if (UTChour === 0) {
-            console.log("Day interval found");
-            set_day_interval();
-        }
-
-    }, 60000 * 60);
 }
 
 function set_day_interval() {
-    clearInterval(hour_interval);
     check_birthday();
     setInterval(function () {
-        check_birthday(true);
+        check_birthday();
     }, 60000 * 60 * 24);
 }
 
-function check_birthday(ptdr_t_ki) {
+function check_birthday() {
     let date = new Date();
     const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
     const fileName = 'mirai_bot.json';
