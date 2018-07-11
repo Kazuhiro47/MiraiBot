@@ -37,7 +37,7 @@ if (!translationsStats) {
 client.on('ready', () => {
     let Kazuhiro = client.users.find('id', '140033402681163776');
     generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
-    testBotChanMT = client.guilds.get("168673025460273152").channels.find("id", "314122440420884480");
+    testBotChanMT = client.channels.find("id", "314122440420884480");
     Kazuhiro.send("El. Psy.. Kongroo.").catch(console.error);
     //analyseLogChan(new Discord.RichEmbed().setColor(bot_data.bot_values.bot_color).setDescription("~~désolé du fail d'avant~~"), testBotChanMT).catch(console.error);
 });
@@ -156,13 +156,19 @@ function set_monokuma_announcement() {
 const monokumaImgs = [
     "https://vignette.wikia.nocookie.net/bloodbrothersgame/images/5/53/Monokuma.jpg/revision/latest/scale-to-width-down/640?cb=20131210191609",
     "https://vignette.wikia.nocookie.net/danganronpa/images/1/12/Monokuma_announcement.png/revision/latest?cb=20161220033639",
-    "https://vignette.wikia.nocookie.net/danganronpa/images/1/16/Monokuma_announcement_DR2.png/revision/latest?cb=20161112051042"
+    "https://vignette.wikia.nocookie.net/danganronpa/images/1/16/Monokuma_announcement_DR2.png/revision/latest?cb=20161112051042",
+    "http://2.bp.blogspot.com/-E5L7PG07qbk/U7zPtDHk_9I/AAAAAAAAAt4/UzoKWesIqWE/s1600/Danganronpa-Episode-07-Monokuma.jpg",
+    "https://i.pinimg.com/236x/cc/c5/b1/ccc5b19b6d41e45d108e57433b5c4469.jpg",
+    "https://lh3.googleusercontent.com/-Gohd89AiIjM/WgO_OZ5VfwI/AAAAAAAAAEw/Ro9esll7SoEMXhjgjU53oyKjv5MWgT1oQCJoC/w800-h800/Monokuma%2B5.jpg",
+    "http://static.tumblr.com/c81445923f61afd3b42fc99273163785/xmdujc6/SrOmrch3o/tumblr_static_tumblr_mptvz4oifo1rnbh24o1_500.gif",
+    "http://i.imgur.com/T5s569W.gif",
 ];
 
 function set_morning_day_interval() {
     const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
+    const creationDate = client.guilds.get('168673025460273152').createdAt;
 
-    const morning_message = new Discord.RichEmbed().setAuthor("Monokuma", "https://vignette.wikia.nocookie.net/danganronpa/images/c/c6/Strikes_Back.jpg/revision/latest?cb=20161029022327")
+    let morning_message = new Discord.RichEmbed().setAuthor("Monokuma", "https://vignette.wikia.nocookie.net/danganronpa/images/c/c6/Strikes_Back.jpg/revision/latest?cb=20161029022327")
         .setColor(bot_data.bot_values.bot_color).addField(
             "Bonjour, tout le monde !",
             "Il est maintenant 7h du matin\n" +
@@ -172,9 +178,31 @@ function set_morning_day_interval() {
             "Préparez-vous à accueillir un autre jour meeeeerveilleux !"
         ).setImage(get_random_in_array(monokumaImgs));
 
+    if (creationDate) {
+        let days = (new Date().valueOf() - creationDate.valueOf()) / 1000 / 60 / 60 / 24;
+
+        morning_message.setFooter(`Ainsi débute le jour ${days.toFixed(0)} à l'Académie du Pic de l'Espoir.`);
+    }
+
     generalChannelMiraiTeam.send(morning_message).catch(console.error);
 
     setInterval(() => {
+
+        morning_message = new Discord.RichEmbed().setAuthor("Monokuma", "https://vignette.wikia.nocookie.net/danganronpa/images/c/c6/Strikes_Back.jpg/revision/latest?cb=20161029022327")
+            .setColor(bot_data.bot_values.bot_color).addField(
+                "Bonjour, tout le monde !",
+                "Il est maintenant 7h du matin\n" +
+                "et la période de nuit est officiellement terminée !\n" +
+                "Il est l'heure de se lever !\n" +
+                "\n" +
+                "Préparez-vous à accueillir un autre jour meeeeerveilleux !"
+            ).setImage(get_random_in_array(monokumaImgs));
+
+        if (creationDate) {
+            let days = (new Date().valueOf() - creationDate.valueOf()) / 1000 / 60 / 60 / 24;
+
+            morning_message.setFooter(`Ainsi débute le jour ${days.toFixed(0)} à l'Académie du Pic de l'Espoir.`);
+        }
 
         generalChannelMiraiTeam.send(morning_message).catch(console.error);
 
@@ -361,7 +389,7 @@ function check_birthday() {
     let month = date.getMonth() + 1;
 
     console.log(`Hours[${(date.getUTCHours() + 2) % 24}], Minutes[${date.getUTCMinutes() % 60}]`);
-    if (date.getUTCHours() + 2 === 0 && date.getMinutes() === 0) {
+    if ((date.getUTCHours() + 2) % 24 === 0 && date.getMinutes() % 60 === 0) {
         if (!fs.existsSync(fileName)) {
             console.error("Aucun anniversaire enregistré.");
         } else {
@@ -375,13 +403,16 @@ function check_birthday() {
 
                     obj.anniversaires.forEach(birthDay => {
                         if (birthDay.day === day && birthDay.month === month) {
-                            generalChannelMiraiTeam.send(`C'est l'anniversaire de <@${birthDay.id}> !`);
+                            generalChannelMiraiTeam.send(new Discord.RichEmbed()
+                                .setAuthor(client.users.get(birthDay.id).username, client.users.get(birthDay.id).avatarURL)
+                                .setImage('https://orig08.deviantart.net/3c26/f/2016/167/b/b/mono3_by_bootsii-da6fs8o.gif')
+                                .setDescription(`C'est l'anniversaire de <@${birthDay.id}> !`)).catch(console.error);
                         }
                     });
 
                     obj.dr_anniversaires.forEach(birthDay => {
                         if (birthDay.day === day && birthDay.month === month) {
-                            generalChannelMiraiTeam.send(`C'est l'anniversaire de ${birthDay.name} !`);
+                            generalChannelMiraiTeam.send(`C'est l'anniversaire de ${birthDay.name} !\nhttps://orig08.deviantart.net/3c26/f/2016/167/b/b/mono3_by_bootsii-da6fs8o.gif`);
                             /*let danganronpa_characters = require("danganronpa_characters.js");
                             let dataBirth = danganronpa_characters[birthDay.name];
                             generalChannelMiraiTeam.send(

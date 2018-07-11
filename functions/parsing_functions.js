@@ -142,7 +142,7 @@ module.exports = {
 
                 message.channel.send(new RichEmbed()
                     .addField(
-                        `**${message.member.displayName}** est passé à la **Division ${bot_data.xp_table[memberXPData.level].string}**`,
+                        `**${message.author.username}** est passé à la **Division ${bot_data.xp_table[memberXPData.level].string}**`,
                         `*${bot_data.xp_table[memberXPData.level].description}*`)
                     .setColor(message.guild.me.displayColor)
                 ).catch(console.error);

@@ -1,8 +1,13 @@
 const Discord = require('discord.js');
+const bot_data = require("../bot_data.js");
 
 exports.run = (client, message) => {
 
     let message_w_tag = message.content.slice('spoil '.length, message.content.length).trim();
+
+    if (message.author.id === bot_data.bot_values.bot_id) {
+        return;
+    }
 
     if (message_w_tag.length === 0) {
 
@@ -134,7 +139,11 @@ exports.run = (client, message) => {
             );
 
             collector.on("collect", reaction => {
-                reaction.users.last().send(spoiler_message.msg).catch((onrejected) => {
+                reaction.users.last().send(new Discord.RichEmbed()
+                    .setAuthor(message.author.username, message.author.avatarURL)
+                    .setColor(bot_data.bot_values.bot_color)
+                    .setDescription(spoiler_message.msg)
+                ).catch((onrejected) => {
                     console.error(onrejected);
                     message.channel.send(`Le message n'a pas pu être envoyé à ${reaction.users.last().username}`).catch(console.error);
                 });
