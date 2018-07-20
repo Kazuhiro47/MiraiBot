@@ -1,15 +1,18 @@
 const Discord = require('discord.js');
 const bot_data = require('./bot_data.js');
+const processFcts = require('./functions/check_process.js');
 const client = new Discord.Client();
 
 let generalChannelMiraiTeam = undefined;
 let testBotChanMT = undefined;
+let danganronpaNewsChan = undefined;
 
 const Enmap = require("enmap");
 const EnmapLevel = require('enmap-level');
 
 // file stream import
 const fs = require('graceful-fs');
+const initTwitterListener = require("./functions/twitter").initTwitterListener;
 const check_xp = require("./functions/parsing_functions").check_xp;
 const get_random_in_array = require("./functions/parsing_functions").get_random_in_array;
 const check_message = require("./functions/parsing_functions").check_message;
@@ -21,11 +24,16 @@ client.memberXP = new Enmap({provider: userProvider});
 const SDSE2Provider = new EnmapLevel({name: 'SDSE2Data'});
 client.SDSE2Data = new Enmap({provider: SDSE2Provider});
 
-const cooldownUserProvider = new EnmapLevel({name: 'userCooldown'});
-client.userCooldown = new Enmap({provider: cooldownUserProvider});
+const userstat = new EnmapLevel({name: 'userstat'});
+client.userstat = new Enmap({provider: userstat});
 
 const tradProvider = new EnmapLevel({name: 'trad'});
 client.trad = new Enmap({provider: tradProvider});
+
+const gSettings = new EnmapLevel({name: "gSettings"});
+client.gSettings = new Enmap({provider: gSettings});
+
+let Kazuhiro = undefined;
 
 let translationsStats = client.trad.get("stats");
 if (!translationsStats) {
@@ -35,10 +43,21 @@ if (!translationsStats) {
 }
 
 client.on('ready', () => {
-    let Kazuhiro = client.users.find('id', '140033402681163776');
+    Kazuhiro = client.users.find('id', '140033402681163776');
     generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
+    danganronpaNewsChan = client.channels.find("id", "347287391029035009");
     testBotChanMT = client.channels.find("id", "314122440420884480");
     Kazuhiro.send("El. Psy.. Kongroo.").catch(console.error);
+
+    processFcts.processIsRunning("dropbox.exe").then(status => {
+        if (!status) {
+            processFcts.runDropbox();
+            Kazuhiro.send("Launching dropbox").catch(console.error);
+        }
+    }).catch(console.error);
+
+    initTwitterListener(danganronpaNewsChan, Kazuhiro);
+
     //analyseLogChan(new Discord.RichEmbed().setColor(bot_data.bot_values.bot_color).setDescription("~~désolé du fail d'avant~~"), testBotChanMT).catch(console.error);
 });
 
@@ -108,10 +127,33 @@ function set_minute_interval() {
         if (UTCminute === 0 || minute === 0) {
             console.log("Hour interval found");
             set_monokuma_announcement();
+            set_hour_interval();
         }
 
     }, 60000);
 }
+
+let set_hour_interval = () => {
+
+    processFcts.processIsRunning("dropbox.exe").then(status => {
+        if (!status) {
+            processFcts.runDropbox();
+            Kazuhiro.send("Launching dropbox").catch(console.error);
+        }
+    }).catch(console.error);
+
+    setInterval(() => {
+
+        processFcts.processIsRunning("dropbox.exe").then(status => {
+            if (!status) {
+                processFcts.runDropbox();
+                Kazuhiro.send("Launching dropbox").catch(console.error);
+            }
+        }).catch(console.error);
+
+    }, 60000 * 60);
+
+};
 
 let monokuma_interval;
 
@@ -208,134 +250,6 @@ function set_morning_day_interval() {
 
     }, 60000 * 60 * 24);
 }
-
-let find_user = (name) => {
-    let usersArray = client.users.array();
-
-    for (let i = 0 ; i < usersArray.length ; i++) {
-        let user = usersArray[i];
-        if (user.username.toLowerCase().trim().includes(name.toLowerCase().trim())) {
-            return (user);
-        }
-    }
-    return (null)
-};
-
-let analyseLogChan = async (messageEmbed, channel) => {
-    const logTradChan = client.channels.find("id", "452118364161048576");
-
-    if (logTradChan) {
-
-        let firstMessage = await logTradChan.fetchMessages({limit: 1});
-        let messagesFetched = await logTradChan.fetchMessages({limit: 100, before: firstMessage.first().id});
-        let stats = {};
-        const now = new Date();
-
-        let checkIfMsgIsToday = (msg) => {
-            return (msg.createdAt.getFullYear() === now.getFullYear() &&
-                (msg.createdAt.getDate() === now.getDate() ||
-                    (msg.createdAt.getDate() + 1 === now.getDate() && msg.createdAt.getHours() > now.getHours())) &&
-                msg.createdAt.getMonth() === now.getMonth());
-        };
-
-        // check first message
-        if (checkIfMsgIsToday(firstMessage.first())) {
-
-            const messageContentArray = firstMessage.first().content.split(/ +/g);
-            let user = find_user(messageContentArray[0]);
-
-            if (!user) {
-                let Kazuhiro = client.users.find('id', '140033402681163776');
-
-                Kazuhiro.send(`L'utilisateur ${messageContentArray[0]} est introuvable`).catch(console.error);
-            } else {
-
-                if (!(user.id in stats)) {
-                    stats[user.id] = 0;
-                }
-
-                if (messageContentArray.length === 7) {
-                    stats[user.id] += 1 + parseInt(messageContentArray[4]);
-                } else {
-                    stats[user.id] += 1;
-                }
-            }
-        }
-
-        let checkIfArrayHasTodayTS = (msgArray) => {
-            for (let i = 0; i < msgArray.length; i++) {
-                if (msgArray[i].createdAt.getFullYear() === now.getFullYear() &&
-                    (msgArray[i].createdAt.getDate() === now.getDate() ||
-                        (msgArray[i].createdAt.getDate() + 1 === now.getDate() && msgArray[i].createdAt.getHours() > now.getHours())) &&
-                    msgArray[i].createdAt.getMonth() === now.getMonth()) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        while (messagesFetched.array().length > 0) {
-
-            if (!checkIfArrayHasTodayTS(messagesFetched.array())) {
-                break;
-            }
-
-            messagesFetched.array().forEach(msgFetched => {
-
-                if (checkIfMsgIsToday(msgFetched)) {
-
-                    const messageContentArray = msgFetched.content.split(/ +/g);
-                    let user = find_user(messageContentArray[0]);
-
-                    if (!user) {
-                        let Kazuhiro = client.users.find('id', '140033402681163776');
-
-                        Kazuhiro.send(`L'utilisateur ${messageContentArray[0]} est introuvable`).catch(console.error);
-                    } else {
-
-                        if (!(user.id in stats)) {
-                            stats[user.id] = 0;
-                        }
-
-                        if (messageContentArray.length === 7) {
-                            stats[user.id] += 1 + parseInt(messageContentArray[4]);
-                        } else {
-                            stats[user.id] += 1;
-                        }
-                    }
-                }
-            });
-
-            messagesFetched = await logTradChan.fetchMessages({limit: 100, before: messagesFetched.last().id});
-        }
-
-        let findHighestTranslators = (statObj) => {
-
-            if (Object.keys(statObj).length === 0) {
-                return undefined;
-            }
-
-            let highest = Object.keys(statObj)[0];
-
-            Object.keys(statObj).forEach(id => {
-                if (statObj[id] > statObj[highest]) {
-                    highest = id;
-                }
-            });
-            return highest;
-        };
-
-        let bestTranslatorId = findHighestTranslators(stats);
-        if (bestTranslatorId !== undefined) {
-            let translator = client.users.find("id", bestTranslatorId);
-
-            messageEmbed
-                .addField("Monokuma nomine le traducteur du jour !", `Merci à **${translator.username}** pour sa contribution considérable aujourd'hui !\n${stats[bestTranslatorId]} répliques traduites ~`)
-                .setImage(translator.avatarURL);
-        }
-    }
-    channel.send(messageEmbed).catch(console.error);
-};
 
 function set_evening_interval() {
 
