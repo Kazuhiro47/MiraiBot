@@ -96,7 +96,6 @@ class Shifumi {
                 );
 
                 for (let i = 0; i < this.reactions.length; i++) {
-                    console.log("react");
                     await msg.react(this.reactions[i]);
                 }
 
@@ -117,11 +116,9 @@ class Shifumi {
                         return;
                     }
 
-                    console.log(reaction.emoji);
                     let i = 0;
                     this.reactions.forEach(r => {
                         if (reaction.emoji.name === r) {
-                            console.log(r);
                             if (index === 1) {
                                 this.playerOneChoice = i;
                             } else {
@@ -166,8 +163,6 @@ class Shifumi {
         let choice1 = choices[this.playerOneChoice];
         let choice2 = choices[this.playerTwoChoice];
 
-        console.log(this.playerOneChoice);
-        console.log(this.playerTwoChoice);
         this.printOutcome(choice1, choice2);
 
     }
