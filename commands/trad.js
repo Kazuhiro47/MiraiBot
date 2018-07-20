@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const analyseLogChan = require("../functions/analyse_channel").analyseLogChan;
 const DanganronpaTranslation = require("../functions/translation_statistics").DanganronpaTranslation;
 const getrevsPromise = require("../functions/dropbox").getrevsPromise;
 const get_file_data = require("../functions/dropbox").get_file_data;
@@ -345,63 +346,7 @@ exports.run = (client, message) => {
 
         if (cleaned_command === 'stat') {
 
-            message.channel.send("Calcul en cours...").catch(console.error);
-
-            let statistics = {};
-
-            readDirectory(path, 'utf8').then(files => {
-
-                let dirPromises = [];
-
-                files.forEach(directory => {
-                    dirPromises.push(new Promise((resolve, reject) => {
-
-                        readDirectory(path + '/' + directory, 'utf8').then(all_dirs => {
-
-                            let txtFilesPromises = [];
-
-                            all_dirs.forEach(dir_or_file => {
-                                if (dir_or_file.endsWith('.txt')) {
-                                    txtFilesPromises.push(getrevsPromise(path.substring(5) + '/' + directory + '/' + dir_or_file, 'utf8'));
-                                } else if (dir_or_file.startsWith("script_pak")) {
-                                    readDirectory(path + '/' + directory + '/' + dir_or_file, 'utf8').then(txt_files => {
-                                        txt_files.forEach(txt_f => {
-                                            txtFilesPromises.push(getrevsPromise(path.substring(5) + '/' + directory + '/' + dir_or_file + '/' + txt_f));
-                                        });
-                                    }).catch(err => reject(err));
-                                }
-                            });
-
-                            Promise.all(txtFilesPromises).then(txtfilesRev => {
-                                resolve(txtfilesRev);
-                            }).catch(err => reject(err));
-
-                        }).catch(err => reject(err));
-
-                    }));
-                });
-
-                Promise.all(dirPromises).then(arrayOfArrayOfRevs => {
-                    arrayOfArrayOfRevs.forEach(arrayOfRevs => {
-                        arrayOfRevs.forEach(revisions => {
-                            revisions.forEach(revision => {
-                                if (!(revision.modifier_name in statistics)) {
-                                    statistics[revision.modifier_name] = null;
-                                } else {
-                                    if (!(part in statistics[revision.modifier_name])) {
-                                        statistics[revision.modifier_name][part] = 0;
-                                    } else {
-                                        statistics[revision.modifier_name][part] += 1
-                                    }
-                                }
-                            });
-                        });
-                    });
-
-                    console.log(statistics);
-
-                }).catch(console.error);
-            }).catch(console.error);
+            analyseLogChan(client, message.channel).catch(console.error);
 
         }
 
@@ -491,6 +436,7 @@ exports.run = (client, message) => {
 
             fs.access(`../../${file_dir}`, (err) => {
                 if (err) {
+                    console.log(`../../${file_dir}`);
                     message.channel.send('Fichier introuvable.').catch(console.error);
                     return;
                 }
@@ -678,6 +624,14 @@ exports.run = (client, message) => {
 
             message.channel.send(fiche_perso);
         }
+
+    } else {
+
+        message.channel.send(new RichEmbed().setAuthor("Guide commande trad")
+            .addField("/trad dr2 récurrente", "afficher les traductions récurrentes de dr2")
+            .addField("/trad dr2 avancement", "afficher l'avancement de la traduction sur dr2")
+            .addField("/trad dr2 get", "afficher une traduction précise\n\nex: /trad dr2 get e08_003_005.lin/0000.txt")
+        ).catch(console.error);
 
     }
 
