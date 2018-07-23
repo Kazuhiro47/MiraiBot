@@ -10,7 +10,7 @@ exports.run = (client, message) => {
     function error_cmd(message, fields = []) {
         let guide_birthday_command = new RichEmbed();
 
-        guide_birthday_command.setColor(message.guild.me.displayColor);
+        guide_birthday_command.setColor(bot_values.bot_color);
         guide_birthday_command.setAuthor("Erreur commande anniversaire", message.guild.me.user.avatarURL);
         fields.forEach(field => {
             guide_birthday_command.addField(field[0], field[1]);
@@ -59,7 +59,7 @@ exports.run = (client, message) => {
                     function send_anniversaires(array) {
                         let all_birthday = new RichEmbed();
 
-                        all_birthday.setColor(message.guild.me.displayColor);
+                        all_birthday.setColor(bot_values.bot_color);
                         all_birthday.setAuthor("Les anniversaires des personnages Danganronpa");
                         let i = 0;
                         let forward = true;

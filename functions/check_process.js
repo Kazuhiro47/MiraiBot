@@ -23,9 +23,10 @@ let processIsRunning = (processName) => new Promise((resolve, reject) => {
 
 });
 
-let runDropbox = () => {
+let runDropbox = () => new Promise((resolve, reject) => {
     console.log("trying to run dropbox");
     exec('\"C:\\Program Files (x86)\\Dropbox\\Client\\Dropbox.exe\"').unref();
-};
+    resolve(true);
+});
 
 module.exports = {processIsRunning, runDropbox};

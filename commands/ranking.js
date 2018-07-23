@@ -26,7 +26,7 @@ function find_highest(client, mems_xp) {
 
 exports.run = (client, message) => {
 
-/*    let membersXP = [];
+    let membersXP = [];
 
     client.users.forEach(user => {
         let userr = client.memberXP.get(user.id);
@@ -60,6 +60,6 @@ exports.run = (client, message) => {
         i += 1;
     }
 
-    message.channel.send(msg).catch(console.error);*/
+    message.channel.send(msg).catch(console.error);
 
 };

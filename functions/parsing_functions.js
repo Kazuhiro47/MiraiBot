@@ -64,6 +64,7 @@ module.exports = {
                     message.delete().then(msg => {
 
                         msg.channel.send(new RichEmbed().setAuthor(msg.member.displayName, msg.author.avatarURL)
+                            .setColor(msg.member.displayColor)
                             .setDescription(ctnt)
                         ).catch(console.error);
 

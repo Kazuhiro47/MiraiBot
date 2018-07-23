@@ -13,17 +13,24 @@ let find_user = (client, name) => {
     return (null)
 };
 
-let getChannelMessages = (client, channel, check_fct) => {
-    return new Promise(async (resolve, reject) => {
-        if (!channel) {
-            reject("Channel not found");
-        }
+/**
+ *
+ * @param client
+ * @param channel
+ * @param check_fct
+ * @returns {Promise<any>}
+ */
+let getChannelMessages = (client, channel, check_fct) => new Promise((resolve, reject) => {
+    if (!channel) {
+        reject("Channel not found");
+    }
 
+    let runAnalyser = async () => {
         let messages = [];
         let firstMessage = await channel.fetchMessages({limit: 1});
         let messagesFetched = await channel.fetchMessages({limit: 100, before: firstMessage.first().id});
 
-        messages.concat(messagesFetched.array());
+        messages = messages.concat(messagesFetched.array());
 
         while (messagesFetched.array().length > 0) {
 
@@ -34,10 +41,10 @@ let getChannelMessages = (client, channel, check_fct) => {
             messagesFetched.array().forEach(msgFetched => {
 
                 if (check_fct === undefined) {
-                    messages.concat(messagesFetched.array());
+                    messages = messages.concat(messagesFetched.array());
                 }
                 if (check_fct && check_fct([msgFetched])) {
-                    messages.concat(messagesFetched.array());
+                    messages = messages.concat(messagesFetched.array());
                 }
 
             });
@@ -46,9 +53,11 @@ let getChannelMessages = (client, channel, check_fct) => {
         }
 
         resolve(messages);
+    };
 
-    });
-};
+    runAnalyser().catch(err => reject(err));
+
+});
 
 let analyseLogChan = async (client, channel) => {
     const logTradChan = client.channels.find("id", "452118364161048576");

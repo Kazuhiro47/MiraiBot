@@ -4,8 +4,7 @@ request({
     uri: "https://www.wordreference.com/enfr/thread",
 }, function (error, response, body) {
     let cheerio = require("cheerio");
-    let $ = cheerio(body);
-    let list = $("ul");
+    let test = cheerio(body);
 
-    console.log(list.html());
+    console.log(test);
 });

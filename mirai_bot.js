@@ -45,18 +45,17 @@ if (!translationsStats) {
 client.on('ready', () => {
     Kazuhiro = client.users.find('id', '140033402681163776');
     generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
-    danganronpaNewsChan = client.channels.find("id", "347287391029035009");
     testBotChanMT = client.channels.find("id", "314122440420884480");
     Kazuhiro.send("El. Psy.. Kongroo.").catch(console.error);
 
     processFcts.processIsRunning("dropbox.exe").then(status => {
         if (!status) {
-            processFcts.runDropbox();
+            processFcts.runDropbox().catch(console.error);
             Kazuhiro.send("Launching dropbox").catch(console.error);
         }
     }).catch(console.error);
 
-    initTwitterListener(danganronpaNewsChan, Kazuhiro);
+    initTwitterListener(generalChannelMiraiTeam, Kazuhiro);
 
     //analyseLogChan(new Discord.RichEmbed().setColor(bot_data.bot_values.bot_color).setDescription("~~désolé du fail d'avant~~"), testBotChanMT).catch(console.error);
 });
@@ -137,7 +136,7 @@ let set_hour_interval = () => {
 
     processFcts.processIsRunning("dropbox.exe").then(status => {
         if (!status) {
-            processFcts.runDropbox();
+            processFcts.runDropbox().catch(console.error);
             Kazuhiro.send("Launching dropbox").catch(console.error);
         }
     }).catch(console.error);
@@ -146,7 +145,7 @@ let set_hour_interval = () => {
 
         processFcts.processIsRunning("dropbox.exe").then(status => {
             if (!status) {
-                processFcts.runDropbox();
+                processFcts.runDropbox().catch(console.error);
                 Kazuhiro.send("Launching dropbox").catch(console.error);
             }
         }).catch(console.error);
@@ -202,7 +201,6 @@ const monokumaImgs = [
     "http://2.bp.blogspot.com/-E5L7PG07qbk/U7zPtDHk_9I/AAAAAAAAAt4/UzoKWesIqWE/s1600/Danganronpa-Episode-07-Monokuma.jpg",
     "https://i.pinimg.com/236x/cc/c5/b1/ccc5b19b6d41e45d108e57433b5c4469.jpg",
     "https://lh3.googleusercontent.com/-Gohd89AiIjM/WgO_OZ5VfwI/AAAAAAAAAEw/Ro9esll7SoEMXhjgjU53oyKjv5MWgT1oQCJoC/w800-h800/Monokuma%2B5.jpg",
-    "http://static.tumblr.com/c81445923f61afd3b42fc99273163785/xmdujc6/SrOmrch3o/tumblr_static_tumblr_mptvz4oifo1rnbh24o1_500.gif",
     "http://i.imgur.com/T5s569W.gif",
 ];
 
@@ -304,6 +302,16 @@ function check_birthday() {
 
     console.log(`Hours[${(date.getUTCHours() + 2) % 24}], Minutes[${date.getUTCMinutes() % 60}]`);
     if ((date.getUTCHours() + 2) % 24 === 0 && date.getMinutes() % 60 === 0) {
+
+        if (day === 22 && month === 7) {
+            generalChannelMiraiTeam.send(new Discord.RichEmbed().setColor([255, 137, 237])
+                .setAuthor("Nico Yazawa", "https://vignette.wikia.nocookie.net/love-live/images/7/7b/S2Ep04_00303.png/revision/latest?cb=20140501113619")
+                .addField("C'est l'anniversaire de NICO YAZAWA !", "NICO NICO NII !")
+                .setImage("http://images6.fanpop.com/image/photos/40000000/Nico-Yazawa-nico-yazawa-40094465-810-456.jpg")
+                .setThumbnail("https://ih0.redbubble.net/image.438189845.6698/raf,750x1000,075,t,fafafa:ca443f4786.jpg")
+            ).catch(console.error);
+        }
+
         if (!fs.existsSync(fileName)) {
             console.error("Aucun anniversaire enregistré.");
         } else {
