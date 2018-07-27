@@ -7,6 +7,8 @@ const RichEmbed = require("discord.js").RichEmbed;
 const get_revisions = require("../functions/dropbox").get_revisions;
 const get_random_index = require("../functions/parsing_functions").get_random_index;
 const write_to_file = require("../functions/write_json").write_to_file;
+const https = require("https");
+const bot_data = require("../bot_data.js");
 
 exports.run = (client, message) => {
 
@@ -387,6 +389,8 @@ exports.run = (client, message) => {
                         avancement.addField(`**Avancement global**`, `${global} / ${global_total} répliques (**${percentage}%**)`);
 
                         message.channel.send(avancement).catch(console.error);
+                        let requestLink = "https://api.thingspeak.com/update?api_key=0WSSEJIK6I2EVHTX&field1=" + percentage;
+                        https.get(requestLink, null);
 
                         progress_messages.forEach(msg => {
                             msg.delete().catch(console.error);
@@ -628,6 +632,7 @@ exports.run = (client, message) => {
     } else {
 
         message.channel.send(new RichEmbed().setAuthor("Guide commande trad")
+            .setColor(bot_data.bot_values.bot_color)
             .addField("/trad dr2 récurrente", "afficher les traductions récurrentes de dr2")
             .addField("/trad dr2 avancement", "afficher l'avancement de la traduction sur dr2")
             .addField("/trad dr2 get", "afficher une traduction précise\n\nex: /trad dr2 get e08_003_005.lin/0000.txt")

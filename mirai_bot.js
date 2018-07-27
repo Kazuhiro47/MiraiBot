@@ -67,12 +67,20 @@ client.on('message', message => {
     check_xp(client, message);
     check_message(message);
 
-    if (!message.content.startsWith(bot_data.bot_values.bot_prefix)) return;
+    const args = message.content.slice(1).trim().split(/ +/g);
+    const command = args.shift().toLowerCase();
+
+    if (!message.content.startsWith(bot_data.bot_values.bot_prefix)) {
+        try {
+            require(`./commands/${command}.js`);
+            message.channel.send("Le préfixe du bot est ```/```").catch(console.error);
+        } catch (e) {
+            return;
+        }
+        return;
+    }
 
     let date = new Date();
-
-    const args = message.content.slice(bot_data.bot_values.bot_prefix.length).trim().split(/ +/g);
-    const command = args.shift().toLowerCase();
 
     console.log(`Command: ${command}`);
 
@@ -85,7 +93,9 @@ client.on('message', message => {
         commandFile.run(client, message, args);
 
     } catch (err) {
-        console.error(err);
+        if (err.code !== "MODULE_NOT_FOUND") {
+            console.error(err);
+        }
     }
 
 
