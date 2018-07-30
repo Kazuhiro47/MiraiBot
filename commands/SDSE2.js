@@ -1,9 +1,16 @@
-const lg_var = require("../bot_data");
+const bot_data = require("../bot_data");
 const RichEmbed = require("discord.js").RichEmbed;
 const ALL_DIRS = require("../functions/sdse_utils.js").ALL_DIRS;
 const SDSE2 = require("../functions/sdse_utils.js");
+const fs = require("fs");
 const ReactionHandler = require("../functions/reactionHandler.js").ReactionHandler;
 const MenuChoice = require("../functions/menu.js").MenuChoice;
+
+Number.prototype.pad = function(size) {
+    let s = String(this);
+    while (s.length < (size || 2)) {s = "0" + s;}
+    return s;
+};
 
 class Menu {
 
@@ -19,6 +26,7 @@ class Menu {
         if (additionnalReactions) {
             this.reactionList = this.reactionList.concat(additionnalReactions);
         }
+        console.log("Menu created");
     }
 
     addPage(embed) {
@@ -69,6 +77,13 @@ class Menu {
                 .catch(err => reject(err));
         });
     }
+
+    resetReactionHandler() {
+        if (this.reactionHandler.collector) {
+            this.reactionHandler.collector.stop();
+        }
+        this.reactionHandler = new ReactionHandler(this.currMessage, this.reactionList);
+    }
 }
 
 class SDSE2Editor {
@@ -80,17 +95,32 @@ class SDSE2Editor {
         this.channel = message.channel;
         this.message = message;
 
+        this.menuChoice = undefined;
+        this.fileChoice = undefined;
+
         this.menu = new Menu();
         this.embed = undefined;
         this.logMessage = undefined;
         this.partList = [];
-        this.channel.send("Log message.").then(msg => {
+
+        this.logmsginit = "Rapport d'activité sdse2 :\n\n";
+        if (!message.member)
+            this.logmsginit += "Le sdse est lancé en mp, les réactions seront donc à enlever manuellement.";
+        this.channel.send(this.logmsginit).then(msg => {
             this.logMessage = msg;
         }).catch(this.quitEditor);
+
+        this.currScenes = [];
+
+        this.translationBuffer = undefined;
+        this.translationGetter = undefined;
+        this.msgBuffer = undefined;
+
+        return this;
     }
 
-    getInitialMsg() {
-        this.embed = new RichEmbed().setColor(lg_var.bot_values.bot_color)
+    _getInitialMsg() {
+        this.embed = new RichEmbed().setColor(bot_data.bot_values.bot_color)
             .setTitle("SDSE2-In-Discord | 🔚 pour quitter le SDSE2")
             .setDescription(
                 "*Veuillez choisir une partie à traduire*\n\n" +
@@ -118,7 +148,7 @@ class SDSE2Editor {
 
         this.menu.channel = this.message.channel;
 
-        this.getInitialMsg();
+        this._getInitialMsg();
         this.menu.addPage(this.embed);
 
         await this.menu.printFirstPage();
@@ -133,62 +163,58 @@ class SDSE2Editor {
             }
 
         }, () => {
-            this.menu.currMessage.delete().catch(console.error);
         });
 
-        let menuChoice = new MenuChoice(this.message, this.embed.fields, this.embed);
-        menuChoice.sentMessage = this.menu.currMessage;
-        this.partChoice = await menuChoice.getChoice(menuChoice.sentMessage);
+        if (this.menuChoice) {
+            delete this.menuChoice;
+        }
+        this.menuChoice = new MenuChoice(this.message, this.embed.fields, this.embed);
+        this.menuChoice.sentMessage = this.menu.currMessage;
+        this.partChoice = await this.menuChoice.getChoice(this.menuChoice.sentMessage);
 
-        await this.printFileChoice();
-        this.launchFileBrowser();
+        await this._printFileChoice();
+        this._launchFileBrowser();
 
     }
 
-    getFileChoice() {
-        let fileChoice = new MenuChoice(this.message, this.embed.fields, this.embed);
-        fileChoice.sentMessage = this.menu.currMessage;
-        fileChoice.first = true;
-        fileChoice.getChoice(fileChoice.sentMessage).catch(console.error);
+    _getFileChoice() {
+        if (this.fileChoice) {
+            delete this.fileChoice;
+        }
+        this.fileChoice = new MenuChoice(this.message, this.menu.pages[this.menu.index].fields, this.menu.pages[this.menu.index]);
+        this.fileChoice.sentMessage = this.menu.currMessage;
+        this.fileChoice.first = true;
+        this.fileChoice.sendBackMenu();
+        return this.fileChoice.getChoice(this.fileChoice.sentMessage);
     }
 
-    launchFileBrowser() {
+    _launchFileBrowser() {
         this.menu.reactionHandler.initCollector(
             (reaction) => {
                 if (reaction.count === 2) {
 
                     if (reaction.emoji.name === "⬅") {
                         reaction.remove(this.translator).catch(() => true);
+                        this.fileChoice.reactionHandler.collector.stop();
                         this.menu.previousPage().then(() => {
-                            this.getFileChoice();
+                            this._getFileChoice().then(fileChoice => {
+                                this._openFileFolder(this.menu.pages[this.menu.index].fields[fileChoice].name).catch(console.error);
+                            }).catch(console.error);
                         }).catch(console.error);
                     }
                     if (reaction.emoji.name === "➡") {
                         reaction.remove(this.translator).catch(() => true);
+                        this.fileChoice.reactionHandler.collector.stop();
                         this.menu.nextPage().then(() => {
-                            this.getFileChoice();
+                            this._getFileChoice().then(fileChoice => {
+                                this._openFileFolder(this.menu.pages[this.menu.index].fields[fileChoice].name).catch(console.error);
+                            }).catch(console.error);
                         }).catch(() => true);
                     }
                     if (reaction.emoji.name === "🔙") {
                         reaction.remove(this.translator).catch(() => true);
-                        this.menu.resetPages();
-                        this.getInitialMsg();
-                        this.menu.currMessage.edit(this.embed).catch(console.error);
-                        let menuChoice = new MenuChoice(this.message, this.embed.fields, this.embed);
-                        menuChoice.sentMessage = this.menu.currMessage;
-                        menuChoice.getChoice(menuChoice.sentMessage).then((partChoice) => {
-                            this.partChoice = partChoice;
-                            this.printFileChoice().then(() => {
-                                this.launchFileBrowser();
-                            }).catch(err => {
-                                console.error(err);
-                                this.quitEditor();
-                            });
-                        }).catch(err => {
-                            console.error(err);
-                            this.quitEditor();
-                        });
-
+                        this.fileChoice.reactionHandler.collector.stop();
+                        this._returnToMainMenu();
                     }
 
                 }
@@ -198,15 +224,39 @@ class SDSE2Editor {
             }
         );
 
-        let fileChoice = new MenuChoice(this.message, this.embed.fields, this.embed);
-        fileChoice.sentMessage = this.menu.currMessage;
-        fileChoice.first = true;
-        this.fileChoice = fileChoice.getChoice(fileChoice.sentMessage).catch(console.error);
+        this._getFileChoice().then(fileChoice => {
+            this._openFileFolder(this.menu.pages[this.menu.index].fields[fileChoice].name).catch(console.error);
+        }).catch(console.error);
     }
 
-    getEmbedList() {
+    _returnToMainMenu() {
+        this.menu.resetPages();
+        this._getInitialMsg();
+        this.menu.currMessage.edit(this.embed).catch(console.error);
+
+        if (this.menuChoice) {
+            delete this.menuChoice;
+        }
+        this.menuChoice = new MenuChoice(this.message, this.embed.fields, this.embed);
+        this.menuChoice.sentMessage = this.menu.currMessage;
+        this.menuChoice.getChoice(this.menuChoice.sentMessage).then((partChoice) => {
+            this.partChoice = partChoice;
+            this._printFileChoice().then(() => {
+                this._launchFileBrowser();
+            }).catch(err => {
+                console.error(err);
+                this.quitEditor();
+            });
+        }).catch(err => {
+            console.error(err);
+            this.quitEditor();
+        });
+        this.menu.reactionHandler.collector.stop();
+    }
+
+    _getEmbedList() {
         let embedList = [];
-        this.embed = new RichEmbed().setColor(lg_var.bot_values.bot_color)
+        this.embed = new RichEmbed().setColor(bot_data.bot_values.bot_color)
             .setTitle("SDSE2-In-Discord")
             .setDescription(
                 "*Veuillez choisir un fichier à traduire*\n\n" +
@@ -216,14 +266,15 @@ class SDSE2Editor {
 
         this.menu.pages = [];
         let keys = Object.keys(ALL_DIRS);
-        let choice = ALL_DIRS[keys[this.partChoice]];
+        this.partChosen = keys[this.partChoice];
+        let choice = ALL_DIRS[this.partChosen];
 
         let limit = 0;
         choice.forEach(file => {
 
-            if (limit === 24) {
+            if (limit === 9) {
                 embedList.push(this.embed);
-                this.embed = new RichEmbed().setColor(lg_var.bot_values.bot_color)
+                this.embed = new RichEmbed().setColor(bot_data.bot_values.bot_color)
                     .setTitle("SDSE2-In-Discord")
                     .setDescription(
                         "*Veuillez choisir un fichier à traduire*\n\n" +
@@ -249,9 +300,9 @@ class SDSE2Editor {
         return embedList;
     }
 
-    async printFileChoice() {
+    async _printFileChoice() {
 
-        let embedList = this.getEmbedList();
+        let embedList = this._getEmbedList();
 
         this.menu.currMessage.edit(embedList[0]).catch(console.error);
         await this.menu.reactionHandler.addReaction("⬅");
@@ -260,8 +311,237 @@ class SDSE2Editor {
 
     }
 
+    _getFileWorkingEmbed() {
+        let keys = Object.keys(ALL_DIRS);
+        return new RichEmbed().setColor(bot_data.bot_values.bot_color)
+            .setTitle(this.currentFileName)
+            .setDescription(keys[this.partChoice]);
+    }
+
+    async _openFileFolder(fileChoice) {
+        this.currentFileName = fileChoice;
+        let DR2File = new SDSE2.DR2File(fileChoice);
+        this.currScenes = [];
+
+        await this.logMessage.edit("Veuillez patienter...");
+        console.log(`Working directory : ${DR2File.directory}, ${fileChoice}`);
+        if (DR2File.checkDir()) {
+
+            await DR2File.computeScenesInfo();
+
+            this.menu.pages = [];
+            this.menu.index = 0;
+
+            console.log(`Scene number : ${DR2File.scenesInfo.length}`);
+
+            DR2File.scenesInfo.forEach(scene => {
+
+                if (!scene.line) {
+                    return;
+                }
+                let embed = this._getFileWorkingEmbed();
+
+                if (scene.flash !== -1) {
+                    if (String(scene.flash.pad(3)) in SDSE2.ALL_IMG.flash) {
+                        console.log(`${scene.flash.pad(3)} image has been set`);
+                        embed.setImage(SDSE2.ALL_IMG.flash[String(scene.flash.pad(3))]);
+                    }
+                } else if (scene.sprite.sprite_id !== -1) {
+
+                    let key = `${scene.sprite.char_id.pad(2)}_${scene.sprite.sprite_id.pad(2)}`;
+
+                    if (key in SDSE2.ALL_IMG.sprites) {
+                        embed.setImage(SDSE2.ALL_IMG.sprites[key]);
+                    }
+                } else if (scene.bgd !== -1) {
+                    let key = scene.bgd.pad(3);
+
+                    if (key in SDSE2.ALL_IMG.bgd) {
+                        embed.setImage(SDSE2.ALL_IMG.bgd[key]);
+                    }
+                }
+
+                if (scene.line.text.french === "") {
+                    embed.addField("Texte Français", "__[A TRADUIRE]__");
+                } else {
+                    embed.addField("Texte Français", scene.line.text.french);
+                }
+                if (scene.line.text.english === "") {
+                    return;
+                } else {
+                    embed.addField("Texte Anglais", scene.line.text.english);
+                }
+                if (scene.line.text.japanese === "") {
+                    return;
+                } else {
+                    embed.addField("Texte Japonais", scene.line.text.japanese);
+                }
+                embed.setFooter(`Ligne ${scene.index + 1}/${DR2File.scenesInfo.length}`);
+
+                this.menu.addPage(embed);
+                this.currScenes.push(scene);
+
+            });
+
+            this.embed = this.menu.pages[0];
+            await this.logMessage.edit(`Fichier ${fileChoice} chargé`);
+            this._initializeFileNavigation();
+
+        } else {
+            console.error("Couldn't open file");
+            this._returnToMainMenu();
+        }
+    }
+
+    _initializeFileNavigation() {
+        this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
+
+        this.menu.reactionHandler.removeReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
+
+        this.menu.resetReactionHandler();
+        this.logMessage.edit("Utilisez la réaction 📝 pour modifier la ligne actuelle\n💾 vous permet de sauvegarder vos changements").catch(console.error);
+        this.menu.reactionHandler.addReactionList(["⬅", "➡", "📝", "💾"]).catch(console.error);
+        this.menu.reactionHandler.initCollector(
+            (reaction) => {
+                if (reaction.count === 2) {
+
+                    if (reaction.emoji.name === "📝") {
+                        reaction.remove(this.translator).catch(() => true);
+                        this.menu.reactionHandler.removeReactionList(["⬅", "➡", "💾"]).catch(console.error);
+                        this.menu.resetReactionHandler();
+                        this._initializeLineEditor();
+                    }
+                    if (reaction.emoji.name === "💾") {
+                        this._saveAll().catch(console.error);
+                    }
+                    if (reaction.emoji.name === "⬅") {
+                        reaction.remove(this.translator).catch(() => true);
+                        this.menu.previousPage().then(() => {
+                        }).catch(console.error);
+                    }
+                    if (reaction.emoji.name === "➡") {
+                        reaction.remove(this.translator).catch(() => true);
+                        this.menu.nextPage().then(() => {
+                        }).catch(() => true);
+                    }
+                    if (reaction.emoji.name === "🔙") {
+                        reaction.remove(this.translator).catch(() => true);
+                        this.fileChoice.reactionHandler.collector.stop();
+                        this.menu.reactionHandler.removeReactionList(["💾", "📝"]).catch(console.error);
+                        this.menu.reactionHandler.addReactionList(["⬇", "⬆"]).catch(console.error);
+                        this._returnToMainMenu();
+                    }
+
+                }
+
+            },
+            () => {
+            }
+        );
+
+    }
+
+    _initializeLineEditor() {
+
+        this.channel.send("```Ecrivez votre texte, il sera rempli ici. Vous validerez ensuite la saisie avec une réaction.```").then((msg) => {
+
+            this.msgBuffer = msg;
+            let translationBufferReaction = new ReactionHandler(this.msgBuffer, ["✅"]);
+            let messageToListen = undefined;
+
+            translationBufferReaction.addReactions().catch(console.error);
+
+            this.translationGetter = this.channel.createMessageCollector((m) => m.author.id !== bot_data.bot_values.bot_id);
+            this.translationGetter.on("collect", m => {
+                m.delete().then(m => {
+                    this.msgBuffer.edit(`\`\`\`${m.content}\`\`\``).catch(console.error);
+                }).catch(() => {
+                    messageToListen = m;
+
+                    this.client.on("messageUpdate", (oldMessage, newMessage) => {
+
+                        if (oldMessage.id === messageToListen.id) {
+                            this.msgBuffer.edit(`\`\`\`${newMessage.content}\`\`\``).catch(console.error);
+                        }
+
+                    });
+
+                    this.translationGetter.stop();
+                });
+            });
+
+            translationBufferReaction.initCollector((reaction) => {
+                if (reaction.count === 2) {
+                    if (reaction.emoji.name === "✅") {
+                        this.translationGetter.stop();
+                        this.menu.pages[this.menu.index].fields[0].value = this.msgBuffer.content.slice(3, this.msgBuffer.content.length - 3);
+                        this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
+                        this.msgBuffer.delete().catch(console.error);
+                        translationBufferReaction.collector.stop();
+                        this._initializeFileNavigation();
+                    }
+                }
+            }, () => {
+
+            });
+
+            this.menu.reactionHandler.initCollector((reaction) => {
+
+                if (reaction.count === 2) {
+
+                    if (reaction.emoji.name === "🔙") {
+                        this.translationGetter.stop();
+                        reaction.remove(this.translator).catch(() => true);
+                        this.msgBuffer.delete().catch(console.error);
+                        this.fileChoice.reactionHandler.collector.stop();
+                        this.menu.reactionHandler.removeReaction("📝").catch(console.error);
+                        this.menu.reactionHandler.removeReaction("💾").catch(console.error);
+                        this.menu.reactionHandler.addReaction("⬇").catch(console.error);
+                        this.menu.reactionHandler.addReaction("⬆").catch(console.error);
+                        this._returnToMainMenu();
+                    }
+
+                }
+
+            }, () => {
+
+            });
+
+        }).catch(console.error);
+
+    }
+
+    async _saveLine(lineObject) {
+
+
+
+    }
+
+    async _saveAll() {
+
+        let scenes = this.currScenes;
+        let scene;
+
+        for (let i = 0 ; i < scenes.length ; i++) {
+
+            scene = scenes[i];
+
+            await this._saveLine(scene.line);
+
+        }
+
+    }
+
     quitEditor() {
+        if (this.translationGetter) {
+            this.translationGetter.stop();
+        }
+        if (this.msgBuffer) {
+            this.msgBuffer.delete().catch(console.error);
+        }
+
         this.menu.currMessage.delete().catch(console.error);
+        this.logMessage.delete().catch(console.error);
         this.channel.send(`SDSE2 de ${this.translator.username} fermé.`).catch(console.error);
     }
 

@@ -71,9 +71,43 @@ class ReactionHandler {
         return this.message.react(reaction);
     }
 
+    async addReactionList(reactionList) {
+        for (let i = 0 ; i < reactionList.length ; i++) {
+            await this.message.react(reactionList[i]);
+        }
+    }
+
     removeReaction(reaction) {
         this.reactionList.splice(this.reactionList.indexOf(reaction), 1);
-        return this.message.reactions.find('name', reaction).remove();
+
+        let reactionArray = this.message.reactions.array();
+        for (let i = 0 ; i < reactionArray.length ; i++) {
+            if (reactionArray[i].emoji.name === reaction) {
+                return reactionArray[i].remove();
+            }
+        }
+        return new Promise((resolve, reject) => resolve(true));
+    }
+
+    async removeReactionList(reactionList) {
+
+        let reaction;
+
+        for (let i = 0 ; i < reactionList.length ; i++) {
+
+            reaction = reactionList[i];
+
+            this.reactionList.splice(this.reactionList.indexOf(reaction), 1);
+
+            let reactionArray = this.message.reactions.array();
+            for (let i = 0 ; i < reactionArray.length ; i++) {
+                if (reactionArray[i].emoji.name === reaction) {
+                    await reactionArray[i].remove();
+                }
+            }
+
+        }
+
     }
 
     /**
@@ -85,8 +119,13 @@ class ReactionHandler {
     initCollector(func, endFunc, filter) {
         if (!filter) {
             filter = () => {
-                return true
+                return true;
             };
+        }
+        if (!endFunc) {
+            endFunc = () => {
+                return true;
+            }
         }
         this.collector = this.message.createReactionCollector(filter);
 

@@ -21,6 +21,9 @@ class MenuChoice {
         this.selectedItemId = 0;
         this.fields = fields;
 
+        this.leftToken = "---[__";
+        this.rightToken = "__]---";
+
         if (embed) {
             this.menuMessage = embed;
             this.messageIsSent = true;
@@ -40,16 +43,32 @@ class MenuChoice {
         this.sendBackMenu();
     }
 
-    refreshSelectedItems() {
-        const leftToken = "---[__";
-        const rightToken = "__]---";
-
+    resetDisplay() {
         this.fields.forEach((field, index) => {
-            if (field.name.startsWith(leftToken[0])) {
-                this.fields[index].name = field.name.slice(leftToken.length, field.name.length - rightToken.length);
+            if (field.name.startsWith(this.leftToken[0])) {
+                this.fields[index].name = field.name.slice(
+                    this.leftToken.length, field.name.length - this.rightToken.length
+                );
             }
         });
-        this.fields[this.selectedItemId].name = leftToken + this.fields[this.selectedItemId].name + rightToken;
+
+        for (let index = 0; index < this.menuMessage.fields.length; index++) {
+            this.menuMessage.fields[index].name = this.fields[index].name;
+        }
+        return this.sentMessage.edit(this.menuMessage);
+
+    }
+
+    refreshSelectedItems() {
+
+        this.fields.forEach((field, index) => {
+            if (field.name.startsWith(this.leftToken[0])) {
+                this.fields[index].name = field.name.slice(
+                    this.leftToken.length, field.name.length - this.rightToken.length
+                );
+            }
+        });
+        this.fields[this.selectedItemId].name = this.leftToken + this.fields[this.selectedItemId].name + this.rightToken;
     }
 
     sendBackMenu() {
@@ -91,18 +110,18 @@ class MenuChoice {
         return new Promise((resolve, reject) => {
 
             const reactions = ['⬇', '⬆', '🆗'];
-            let reactionHandler = new ReactionHandler(msg, reactions);
+            this.reactionHandler = new ReactionHandler(msg, reactions);
 
             let runFct = async () => {
                 if (!this.first) {
                     this.sendBackMenu();
-                    await reactionHandler.addReactions();
+                    await this.reactionHandler.addReactions();
                     this.first = true;
                 }
             };
             runFct().then(() => {
 
-                reactionHandler.initCollector((reaction) => {
+                this.reactionHandler.initCollector((reaction) => {
 
                     if (reaction.count !== 2) {
                         return;
@@ -129,8 +148,14 @@ class MenuChoice {
                     } else if (reaction.emoji.name === '🆗') {
 
                         reaction.remove(this.user).catch(() => true);
-                        resolve(this.selectedItemId);
-                        reactionHandler.collector.stop();
+                        this.resetDisplay().then(() => {
+                            resolve(this.selectedItemId);
+                            this.reactionHandler.collector.stop();
+                        }).catch(err => {
+                            console.error(err);
+                            resolve(this.selectedItemId);
+                            this.reactionHandler.collector.stop();
+                        });
                     }
 
                 }, () => {
