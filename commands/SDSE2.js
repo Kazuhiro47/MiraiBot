@@ -412,6 +412,7 @@ class SDSE2Editor {
                         this._initializeLineEditor();
                     }
                     if (reaction.emoji.name === "💾") {
+                        reaction.remove(this.translator).catch(() => true);
                         this._saveAll().catch(console.error);
                     }
                     if (reaction.emoji.name === "⬅") {
@@ -511,9 +512,11 @@ class SDSE2Editor {
 
     }
 
-    async _saveLine(lineObject) {
+    async _saveLine(lineObject, index) {
 
+        let newMsgContent = this.menu.pages[index].fields[0].value;
 
+        await lineObject.updateLineAndSave(newMsgContent, this.logMessage);
 
     }
 
@@ -526,7 +529,7 @@ class SDSE2Editor {
 
             scene = scenes[i];
 
-            await this._saveLine(scene.line);
+            await this._saveLine(scene.line, i);
 
         }
 
@@ -549,8 +552,11 @@ class SDSE2Editor {
 
 exports.run = (client, message) => {
 
-    let sdse = new SDSE2Editor(message, client);
+    if (message.member && message.member.roles.find("id", "473236153315885069")) {
 
-    sdse.initMenuSDSE().catch(console.error);
+        let sdse = new SDSE2Editor(message, client);
+
+        sdse.initMenuSDSE().catch(console.error);
+    }
 
 };

@@ -3401,6 +3401,37 @@ class DR2Line {
         });
     }
 
+    writeFile() {
+        return new Promise((resolve, reject) => {
+            fs.writeFile(this.path, this.data, function(err) {
+                if(err) {
+                    return reject(err);
+                }
+
+                resolve(true);
+            });
+        });
+    }
+
+    async updateLineAndSave(newMsgContent, logMessage) {
+
+        //let logMsg = `BEFORE:\n${this.data}\n-----------`;
+
+        let originalData = this.data;
+        this.data = this.data.replace(
+            this.text.french.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+            newMsgContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        );
+
+        //logMsg += `\nAFTER\n${this.data}\n-----------`;
+
+        if (originalData !== this.data) {
+            await this.writeFile();
+            await logMessage.edit(`${logMessage.content}\n${this.path} modifié`);
+            //console.log(logMsg);
+        }
+    }
+
     checkFile() {
         return new Promise((resolve, reject) => {
             this.openFile().then(([data, encoding]) => {
