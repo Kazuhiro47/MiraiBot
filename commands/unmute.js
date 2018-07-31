@@ -51,8 +51,6 @@ let unmute = (client, message, args) => new Promise((resolve, reject) => {
     }
 });
 
-module.exports = {unmute};
-
 exports.run = (client, message, args) => {
 
     unmute(client, message, args).catch(console.error);

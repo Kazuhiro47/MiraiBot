@@ -47,8 +47,6 @@ let mute = (client, message, args) => new Promise((resolve, reject) => {
     }
 });
 
-module.exports = {mute};
-
 exports.run = (client, message, args) => {
 
     mute(client, message, args).catch(console.error);
