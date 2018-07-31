@@ -89,6 +89,8 @@ class Menu {
 class SDSE2Editor {
 
     constructor(message, client) {
+        this.logChannel = client.channels.find("id", "452118364161048576");
+
         this.id = message.author.id;
         this.translator = message.author;
         this.client = client;
@@ -284,6 +286,7 @@ class SDSE2Editor {
                 limit = 0;
             }
 
+            //todo: add file stat
             this.embed.addField(
                 file, "test", true
             );
@@ -405,6 +408,8 @@ class SDSE2Editor {
             (reaction) => {
                 if (reaction.count === 2) {
 
+                    //todo: Reload function
+
                     if (reaction.emoji.name === "📝") {
                         reaction.remove(this.translator).catch(() => true);
                         this.menu.reactionHandler.removeReactionList(["⬅", "➡", "💾"]).catch(console.error);
@@ -429,8 +434,12 @@ class SDSE2Editor {
                         reaction.remove(this.translator).catch(() => true);
                         this.fileChoice.reactionHandler.collector.stop();
                         this.menu.reactionHandler.removeReactionList(["💾", "📝"]).catch(console.error);
-                        this.menu.reactionHandler.addReactionList(["⬇", "⬆"]).catch(console.error);
-                        this._returnToMainMenu();
+                        this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
+                        this.menu.resetPages();
+                        this.menu.resetReactionHandler();
+                        this._printFileChoice().then(() => {
+                            this._launchFileBrowser();
+                        }).catch(console.error);
                     }
 
                 }
@@ -444,70 +453,86 @@ class SDSE2Editor {
 
     _initializeLineEditor() {
 
-        this.channel.send("```Ecrivez votre texte, il sera rempli ici. Vous validerez ensuite la saisie avec une réaction.```").then((msg) => {
+        this.channel.send("Envoyez votre texte. Vous validerez ensuite la saisie avec une réaction.").then(guideMsg => {
+            this.channel.send("```" + this.menu.pages[this.menu.index].fields[0].value + "```").then((msg) => {
 
-            this.msgBuffer = msg;
-            let translationBufferReaction = new ReactionHandler(this.msgBuffer, ["✅"]);
-            let messageToListen = undefined;
+                this.msgBuffer = msg;
+                let translationBufferReaction = new ReactionHandler(this.msgBuffer, ["✅", "❌"]);
+                let messageToListen = undefined;
 
-            translationBufferReaction.addReactions().catch(console.error);
+                translationBufferReaction.addReactions().catch(console.error);
 
-            this.translationGetter = this.channel.createMessageCollector((m) => m.author.id !== bot_data.bot_values.bot_id);
-            this.translationGetter.on("collect", m => {
-                m.delete().then(m => {
-                    this.msgBuffer.edit(`\`\`\`${m.content}\`\`\``).catch(console.error);
-                }).catch(() => {
-                    messageToListen = m;
+                this.translationGetter = this.channel.createMessageCollector((m) => m.author.id !== bot_data.bot_values.bot_id);
+                this.translationGetter.on("collect", m => {
+                    m.delete().then(m => {
 
-                    this.client.on("messageUpdate", (oldMessage, newMessage) => {
+                        let content = SDSE2.formatContent(m.content);
 
-                        if (oldMessage.id === messageToListen.id) {
-                            this.msgBuffer.edit(`\`\`\`${newMessage.content}\`\`\``).catch(console.error);
+                        this.msgBuffer.edit(`\`\`\`${content}\`\`\``).catch(console.error);
+                    }).catch(() => {
+                        messageToListen = m;
+
+                        this.client.on("messageUpdate", (oldMessage, newMessage) => {
+
+                            if (oldMessage.id === messageToListen.id) {
+                                this.msgBuffer.edit(`\`\`\`${newMessage.content}\`\`\``).catch(console.error);
+                            }
+
+                        });
+
+                        this.translationGetter.stop();
+                    });
+                });
+
+                translationBufferReaction.initCollector((reaction) => {
+                    if (reaction.count === 2) {
+                        if (reaction.emoji.name === "✅") {
+                            this.translationGetter.stop();
+                            this.menu.pages[this.menu.index].fields[0].value = this.msgBuffer.content.slice(3, this.msgBuffer.content.length - 3);
+                            this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
+                            guideMsg.delete().catch(console.error);
+                            this.msgBuffer.delete().catch(console.error);
+                            translationBufferReaction.collector.stop();
+                            this._initializeFileNavigation();
+                        }
+                        if (reaction.emoji.name === "❌") {
+                            this.translationGetter.stop();
+                            guideMsg.delete().catch(console.error);
+                            this.msgBuffer.delete().catch(console.error);
+                            translationBufferReaction.collector.stop();
+                            this._initializeFileNavigation();
+                        }
+                    }
+                }, () => {
+
+                });
+
+                this.menu.reactionHandler.initCollector((reaction) => {
+
+                    if (reaction.count === 2) {
+
+                        if (reaction.emoji.name === "🔙") {
+                            this.translationGetter.stop();
+                            reaction.remove(this.translator).catch(() => true);
+                            guideMsg.delete().catch(console.error);
+                            this.msgBuffer.delete().catch(console.error);
+                            this.fileChoice.reactionHandler.collector.stop();
+                            this.menu.reactionHandler.removeReactionList(["📝", "💾"]).catch(console.error);
+                            this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
+                            this.menu.resetPages();
+                            this.menu.resetReactionHandler();
+                            this._printFileChoice().then(() => {
+                                this._launchFileBrowser();
+                            }).catch(console.error);
                         }
 
-                    });
+                    }
 
-                    this.translationGetter.stop();
+                }, () => {
+
                 });
-            });
 
-            translationBufferReaction.initCollector((reaction) => {
-                if (reaction.count === 2) {
-                    if (reaction.emoji.name === "✅") {
-                        this.translationGetter.stop();
-                        this.menu.pages[this.menu.index].fields[0].value = this.msgBuffer.content.slice(3, this.msgBuffer.content.length - 3);
-                        this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
-                        this.msgBuffer.delete().catch(console.error);
-                        translationBufferReaction.collector.stop();
-                        this._initializeFileNavigation();
-                    }
-                }
-            }, () => {
-
-            });
-
-            this.menu.reactionHandler.initCollector((reaction) => {
-
-                if (reaction.count === 2) {
-
-                    if (reaction.emoji.name === "🔙") {
-                        this.translationGetter.stop();
-                        reaction.remove(this.translator).catch(() => true);
-                        this.msgBuffer.delete().catch(console.error);
-                        this.fileChoice.reactionHandler.collector.stop();
-                        this.menu.reactionHandler.removeReaction("📝").catch(console.error);
-                        this.menu.reactionHandler.removeReaction("💾").catch(console.error);
-                        this.menu.reactionHandler.addReaction("⬇").catch(console.error);
-                        this.menu.reactionHandler.addReaction("⬆").catch(console.error);
-                        this._returnToMainMenu();
-                    }
-
-                }
-
-            }, () => {
-
-            });
-
+            }).catch(console.error);
         }).catch(console.error);
 
     }
@@ -516,7 +541,14 @@ class SDSE2Editor {
 
         let newMsgContent = this.menu.pages[index].fields[0].value;
 
-        await lineObject.updateLineAndSave(newMsgContent, this.logMessage);
+        //todo: Handle duplicate lines
+
+        await lineObject.updateLineAndSave(
+            newMsgContent,
+            this.logMessage,
+            this.logChannel,
+            this.translator.username
+        );
 
     }
 
