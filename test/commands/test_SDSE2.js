@@ -78,3 +78,88 @@ describe("DR2File", () => {
     }).timeout(100000);
 
 });
+
+describe("format content function tests", () => {
+
+    it('basic, under 64', function () {
+
+        let msg = "This is a test";
+        let formatedMsg = SDSE2.formatContent(msg);
+
+        assert.equal(formatedMsg, msg);
+
+    });
+
+    it('basic, above 64', function () {
+
+        let msg = "La situation qui était sur le point de se dérouler contenait deux émotions conflictuelles de la même ampleur.";
+
+        let formatedMsg = SDSE2.formatContent(msg);
+
+        assert.equal(
+            formatedMsg,
+            "La situation qui était sur le point de se dérouler contenait\n" +
+            "deux émotions conflictuelles de la même ampleur."
+        );
+
+    });
+
+    it('basic, above 64, three lines', function () {
+
+        let msg = "La situation qui était sur le point de se dérouler contenait deux émotions conflictuelles de la même ampleur. La situation qui était sur le point de se dérouler contenait deux émotions conflictuelles de la même ampleur.";
+
+        let formatedMsg = SDSE2.formatContent(msg);
+
+        assert.equal(
+            formatedMsg,
+            "La situation qui était sur le point de se dérouler contenait\n" +
+            "deux émotions conflictuelles de la même ampleur. La situation\n" +
+            "qui était sur le point de se dérouler contenait deux émotions\n" +
+            "conflictuelles de la même ampleur."
+        );
+
+    });
+
+    it('with CLT, above 64', function () {
+
+        let msg = "<CLT 04>La situation qui était sur<CLT> le point de se dérouler contenait deux émotions conflictuelles de la même ampleur.";
+
+        let formatedMsg = SDSE2.formatContent(msg);
+
+        assert.equal(
+            formatedMsg,
+            "<CLT 04>La situation qui était sur<CLT> le point de se dérouler contenait\n" +
+            "deux émotions conflictuelles de la même ampleur."
+        );
+
+    });
+
+    it('with wrong CLT, above 64', function () {
+
+        let msg = "<CLT La situation qui était sur le point de se dérouler contenait deux émotions conflictuelles de la même ampleur.";
+
+        let formatedMsg = SDSE2.formatContent(msg);
+
+        assert.equal(
+            formatedMsg,
+            "<CLT La situation qui était sur le point de se dérouler\n" +
+            "contenait deux émotions conflictuelles de la même ampleur."
+        );
+
+    });
+
+    it('ponctuation, above 64', function () {
+
+        let msg = "Tu vois ? Dans le mille ! Je le savais parce que je suis pareil !";
+
+        let formatedMsg = SDSE2.formatContent(msg);
+
+        assert.equal(
+            formatedMsg,
+            "Tu vois ? Dans le mille ! Je le savais parce que je suis\n" +
+            "pareil !"
+        );
+
+    });
+
+});

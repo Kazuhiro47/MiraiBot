@@ -3335,6 +3335,7 @@ class DR2File {
                         return;
                     }
                     try {
+                        //todo: get speaker
                         let infos = line.split("\r\n");
                         if (infos[4].split(':')[1] !== undefined) {
                             this.scenesInfo.push({
@@ -3413,21 +3414,38 @@ class DR2Line {
         });
     }
 
-    async updateLineAndSave(newMsgContent, logMessage) {
+    async updateLineAndSave(newMsgContent, logMessage, logChannel, username) {
 
         //let logMsg = `BEFORE:\n${this.data}\n-----------`;
 
+        if (newMsgContent === "__[A TRADUIRE]__") {
+            return;
+        }
+
         let originalData = this.data;
-        this.data = this.data.replace(
-            this.text.french.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
-            newMsgContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")
-        );
+
+        if (this.isTranslated) {
+            this.data = this.data.replace(
+                this.text.french.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                newMsgContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            );
+        } else {
+            this.data = this.data.replace(
+                `<text lang="en" />`,
+                `<text lang="en">${newMsgContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</text>`
+            );
+        }
+
 
         //logMsg += `\nAFTER\n${this.data}\n-----------`;
 
         if (originalData !== this.data) {
             await this.writeFile();
-            await logMessage.edit(`${logMessage.content}\n${this.path} modifié`);
+            logMessage.edit(`${logMessage.content}\n${this.path} modifié`).catch(() => {
+                logMessage.edit(`${this.path} modifié`).catch(console.error);
+            });
+
+            logChannel.send(`${username} modified ${this.path}.`).catch(console.error);
             //console.log(logMsg);
         }
     }
@@ -3483,4 +3501,63 @@ class DR2Line {
 
 }
 
-module.exports = {CHAR_IDS, ALL_DIRS, ALL_IMG, DR2Line, DR2File};
+let formatContent = (content) => {
+
+    let cleanedContent = content.replace(/<CLT \d\d>/g, "").replace(/<CLT>/g, "");
+    const ponctuation = [".", "?", ";", ":", "!"];
+
+    if (cleanedContent.length <= 64) {
+        return content;
+    }
+
+    content = content.replace(/\n/g, "");
+
+    let newContent = "";
+
+    let length = 0;
+    let inClt = false;
+    for (let i = 0 ; i < content.length ; i++) {
+
+        if (content[i] === '<' && content.indexOf('>', i) !== -1) {
+            inClt = true;
+        }
+        if (content[i] === '>') {
+            inClt = false;
+        }
+
+        if (length === 64) {
+            let j = i;
+
+            if (content[i] === ' ') {
+                while (content[j] === ' ' && j > 0) {
+                    j -= 1;
+                }
+            }
+
+            if (ponctuation.includes(content[j])) {
+                while (content[j] !== ' ' && j > 0) {
+                    j -= 1;
+                }
+                while (content[j] === ' ' && j > 0) {
+                    j -= 1;
+                }
+            }
+
+            while (content[j] !== ' ' && j > 0) {
+                j -= 1;
+            }
+            let end = newContent.slice(j).trimLeft();
+            newContent = `${newContent.slice(0, j)}\n${end}`;
+            length = end.length;
+        }
+
+        newContent += content[i];
+        if (!inClt) {
+            length += 1;
+        }
+    }
+
+    return newContent;
+};
+
+module.exports = {CHAR_IDS, ALL_DIRS, ALL_IMG, DR2Line, DR2File, formatContent};
