@@ -11,11 +11,25 @@ class MemberUserXP {
 
 }
 
+let sendMsgToModerators = (client, msg) => {
+
+    let miraiteam = client.guilds.find('id', "168673025460273152");
+
+    miraiteam.members.array().forEach(member => {
+
+        if (member.roles.find("id", "346226913423130625")) {
+            member.send(msg).catch(console.error);
+        }
+
+    });
+
+};
+
 module.exports = {
 
     MemberUserXP,
 
-    check_message: function (message) {
+    check_message: function (client, message) {
 
         function isUpperCase(str) {
             return str === str.toUpperCase();
@@ -38,7 +52,8 @@ module.exports = {
             }
         }
 
-        /*if (message.author.id !== bot_data.bot_values.bot_id) {
+        const exceptChannels = ["danganronpa 1", "danganronpa 2", "discord sdse2", "danganronpa another episode"];
+        if (message.channel.parentID !== "473236555088265266" && message.author.id !== bot_data.bot_values.bot_id) {
 
             let check_bad_words = () => new Promise((resolve, reject) => {
 
@@ -48,7 +63,7 @@ module.exports = {
                     ctnt = ctnt.replace('*', '');
                 }
 
-                const short_bad_words = ['tg', 'pd'];
+                const short_bad_words = ['tg', 'pd', "ntm", "fdp"];
 
                 let lol = false;
 
@@ -61,33 +76,22 @@ module.exports = {
                 });
 
                 if (lol) {
-                    message.delete().then(msg => {
-
-                        msg.channel.send(new RichEmbed().setAuthor(msg.member.displayName, msg.author.avatarURL)
-                            .setColor(msg.member.displayColor)
-                            .setDescription(ctnt)
-                        ).catch(console.error);
-
-                    }).catch(console.error);
+                    return resolve(ctnt);
                 }
 
                 if (ctnt === "tg" || ctnt === 'pd') {
-                    message.delete().then(msg => {
-
-                        msg.channel.send(new RichEmbed().setAuthor(msg.member.displayName, msg.author.avatarURL)
-                            .setDescription("||")
-                        ).catch(console.error);
-
-                    }).catch(console.error);
-                    return reject(true);
+                    return resolve("||");
                 }
 
-                const bad_words = ["ta gueule", "salope", "pute", " tg "];
+                const bad_words = [
+                    "ta gueule", "salope", "pute", " tg ", "connard", "connasse", "gros con", "sale con", "t'es trop con",
+                    "va te faire foutre", "t'es con", "fils de pute", "nique ta mère", "pédé ", "enculé"
+                ];
 
                 let yes = false;
 
                 bad_words.forEach(bad_word => {
-                    if (message.content.includes(bad_word)) {
+                    if (ctnt.indexOf(bad_word) !== -1) {
                         ctnt = ctnt.replace(bad_word, '|||||||');
                         yes = true;
                     }
@@ -109,11 +113,13 @@ module.exports = {
                         .setDescription(ctnt)
                     ).catch(console.error);
 
+                    sendMsgToModerators(client, `Insulte détectée\n${message.channel.name} | ${message.author.username} : ${message.content}`);
+
                 }).catch(console.error);
             }).catch(() => {
                 return;
-            })
-        }*/
+            });
+        }
 
     },
 

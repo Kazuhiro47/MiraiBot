@@ -3,6 +3,9 @@ const bot_data = require('./bot_data.js');
 const processFcts = require('./functions/check_process.js');
 const client = new Discord.Client();
 
+// UTC + 2 or UTC + 1
+const UTC_LOCAL_TIMESHIFT = 2;
+
 let generalChannelMiraiTeam = undefined;
 let testBotChanMT = undefined;
 let danganronpaNewsChan = undefined;
@@ -65,7 +68,7 @@ client.on('ready', () => {
 client.on('message', message => {
 
     check_xp(client, message);
-    check_message(message);
+    check_message(client, message);
 
     const args = message.content.slice(1).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
@@ -73,7 +76,7 @@ client.on('message', message => {
     if (!message.content.startsWith(bot_data.bot_values.bot_prefix)) {
         try {
             require(`./commands/${command}.js`);
-            message.channel.send("Le préfixe du bot est ```/```").catch(console.error);
+            message.channel.send("Le préfixe du bot est ```/```, la commande /" + command + " existe.").catch(console.error);
         } catch (e) {
             return;
         }
@@ -88,7 +91,7 @@ client.on('message', message => {
 
         let commandFile = require(`./commands/${command}.js`);
 
-        console.log(`${date.getUTCDate()}/${date.getUTCMonth() + 1} ${date.getUTCHours() + 1}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s | ${message.guild} | ${message.channel.name} | ${message.author.username} : ${message.content}`);
+        console.log(`${date.getUTCDate()}/${date.getUTCMonth() + 1} ${date.getUTCHours() + UTC_LOCAL_TIMESHIFT}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s | ${message.guild} | ${message.channel.name} | ${message.author.username} : ${message.content}`);
 
         commandFile.run(client, message, args);
 
@@ -181,7 +184,7 @@ function set_monokuma_announcement() {
         }
 
         let date = new Date();
-        let UTChour = (date.getUTCHours() + 2) % 24;
+        let UTChour = (date.getUTCHours() + UTC_LOCAL_TIMESHIFT) % 24;
 
         if (UTChour === 7) {
             console.log("Morning interval found");
@@ -310,8 +313,8 @@ function check_birthday() {
     let day = date.getDate() + 1;
     let month = date.getMonth() + 1;
 
-    console.log(`Hours[${(date.getUTCHours() + 2) % 24}], Minutes[${date.getUTCMinutes() % 60}]`);
-    if ((date.getUTCHours() + 2) % 24 === 0 && date.getMinutes() % 60 === 0) {
+    console.log(`Hours[${(date.getUTCHours() + UTC_LOCAL_TIMESHIFT) % 24}], Minutes[${date.getUTCMinutes() % 60}]`);
+    if ((date.getUTCHours() + UTC_LOCAL_TIMESHIFT) % 24 === 0 && date.getMinutes() % 60 === 0) {
 
         if (day === 22 && month === 7) {
             generalChannelMiraiTeam.send(new Discord.RichEmbed().setColor([255, 137, 237])
