@@ -163,3 +163,28 @@ describe("format content function tests", () => {
     });
 
 });
+
+describe('duplicate system', () => {
+
+    it('should open csv file correctly', function () {
+        SDSE2.constructDupesDB().then((dupeDB) => {
+            assert.equal(Object.keys(dupeDB.pathToNumber).length, 29486);
+            assert.equal(Object.keys(dupeDB.numberToPath).length, 8747);
+        }).catch(err => done(err));
+    });
+
+    it('getDupesOf function test', async function () {
+
+        let line = new SDSE2.DR2Line(`../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script/e00_001_180.lin/0000.txt`);
+        if (!(await line.checkFile())) {
+            return;
+        }
+        let data = await line.openFile();
+        line.data = data[0];
+        line.encoding = data[1];
+        line.retrieveContent();
+        let dupes = await SDSE2.getDupesOf(line, await SDSE2.constructDupesDB());
+        assert.equal(dupes.length, 4);
+    });
+
+});
