@@ -175,7 +175,7 @@ describe('duplicate system', () => {
 
     it('getDupesOf function test', async function () {
 
-        let line = new SDSE2.DR2Line(`../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script/e00_001_180.lin/0000.txt`);
+        let line = new SDSE2.DR2Line(`../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01\\jp\\script\\e00_001_180.lin\\0012.txt`);
         if (!(await line.checkFile())) {
             return;
         }

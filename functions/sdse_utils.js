@@ -3322,7 +3322,6 @@ class DR2File {
 
             let index = 0;
             pythonProcess.stdout.on('data', (data) => {
-                console.log("Data received for " + this.directory);
                 let allData = data.toString().split("--------------------\r\n");
                 allData.forEach(line => {
                     if (line === "") {
@@ -3414,7 +3413,7 @@ class DR2Line {
         });
     }
 
-    async updateLineAndSave(newMsgContent, logMessage, logChannel, username) {
+    async updateLineAndSave(newMsgContent) {
 
         //let logMsg = `BEFORE:\n${this.data}\n-----------`;
 
@@ -3441,13 +3440,15 @@ class DR2Line {
 
         if (originalData !== this.data) {
             await this.writeFile();
-            logMessage.edit(`${logMessage.content}\n${this.path} modifié`).catch(() => {
-                logMessage.edit(`${this.path} modifié`).catch(console.error);
-            });
 
-            logChannel.send(`${username} modified ${this.path}.`).catch(console.error);
+            return {
+                hasBeenSaved: true,
+                path: this.path
+            };
+
             //console.log(logMsg);
         }
+        return {hasBeenSaved: false, path: this.path};
     }
 
     checkFile() {
@@ -3500,6 +3501,78 @@ class DR2Line {
     }
 
 }
+
+let getDupesOf = async (lineObj, dupesDB, index) => {
+
+    let intermediatePath = lineObj.path.replace(/\\/g, "/");
+    let path = intermediatePath.split("/").slice(5).join("\\");
+    let number = dupesDB.pathToNumber[path];
+
+    if (number === undefined) {
+        return [{lineObj: lineObj, index: index}];
+    }
+
+    let dupes = dupesDB.numberToPath[number];
+    let lineDupes = [];
+
+    let lineObjPath;
+    if (dupes === undefined) {
+        console.error(lineObj.path);
+        console.error(number);
+        console.error(path);
+    }
+    for (let i = 0 ; i < dupes.length ; i++) {
+
+        let dupe = dupes[i];
+
+        lineObjPath = `../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/${dupe.replace(/\\/g, "/")}`;
+
+        let line = new DR2Line(lineObjPath);
+        if (!(await line.checkFile())) {
+            console.error(lineObjPath);
+            continue;
+        }
+        let data = await line.openFile();
+        line.data = data[0];
+        line.encoding = data[1];
+        line.retrieveContent();
+        lineDupes.push({lineObj: line, index: index});
+    }
+
+    return lineDupes;
+};
+
+let constructDupesDB = () => new Promise((resolve, reject) => {
+
+    fs.readFile("../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/dupesDR2STEAM.csv", 'utf8', (err, data) => {
+        if (err) {
+            return reject(err);
+        }
+
+        let dupes = data.split('\n');
+        dupes.shift();
+
+        let dupesData = {
+            numberToPath: {},
+            pathToNumber: {}
+        };
+
+        let infos;
+        dupes.forEach(line => {
+            infos = line.split(',');
+            if (dupesData.numberToPath[infos[0]] === undefined) {
+                dupesData.numberToPath[infos[0]] = [infos[1]];
+            } else {
+                dupesData.numberToPath[infos[0]].push(infos[1]);
+            }
+            dupesData.pathToNumber[infos[1]] = parseInt(infos[0]);
+        });
+
+        return resolve(dupesData);
+
+    });
+
+});
 
 let formatContent = (content) => {
 
@@ -3560,4 +3633,13 @@ let formatContent = (content) => {
     return newContent;
 };
 
-module.exports = {CHAR_IDS, ALL_DIRS, ALL_IMG, DR2Line, DR2File, formatContent};
+module.exports = {
+    CHAR_IDS,
+    ALL_DIRS,
+    ALL_IMG,
+    DR2Line,
+    DR2File,
+    formatContent,
+    constructDupesDB,
+    getDupesOf
+};
