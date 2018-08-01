@@ -6,15 +6,17 @@ const game_ending = require("../lg/game_core/game_ending");
 const day = require("../lg/game_core/day");
 const RichEmbed = require("discord.js").RichEmbed;
 let bot_data = require("../bot_data.js");
+const functions = require("../functions/find_user");
+const lg_functions = require("../lg/lg_functions");
 
 function lg_init(client, message) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
         let gSettings = client.gSettings.get(message.guild.id);
 
         gSettings.LG.game_initialized = true;
         gSettings.LG.stemming_player = message.member.id;
 
-        let msg = await message.channel.send({
+        message.channel.send({
             embed: {
                 color: 7419530,
                 fields: [{
@@ -22,12 +24,12 @@ function lg_init(client, message) {
                     value: "Initialisation du jeu..."
                 }]
             }
-        });
-
-        role_setup.create_roles(client, message).then(() => resolve(msg)).catch(error_msg => {
-            message.channel.send("Erreur lors de la création des rôles.").catch(console.error);
-            reject(error_msg);
-        });
+        }).then(msg => {
+            role_setup.create_roles(client, message).then(() => resolve(msg)).catch(error_msg => {
+                message.channel.send("Erreur lors de la création des rôles.").catch(console.error);
+                reject(error_msg);
+            });
+        }).catch(err => reject(err));
 
     });
 }
@@ -134,7 +136,11 @@ exports.run = (client, message, args) => {
         if (!target) {
             let nature = 'L\'utilisateur n\'a pas été trouvé.';
             let utilisation = `${gSettings.prefix}lg leave <pseudo>`;
-            functions.error_message(client, message, `${gSettings.prefix}lg lead <pseudo>`, nature, utilisation);
+            message.channel.send(new RichEmbed()
+                .setColor(bot_data.bot_values.bot_color)
+                .setTitle(`${gSettings.prefix}lg lead <pseudo>`)
+                .addField(nature, utilisation)
+            );
             return;
         }
 
