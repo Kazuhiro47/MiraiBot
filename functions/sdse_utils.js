@@ -3418,7 +3418,7 @@ class DR2Line {
         //let logMsg = `BEFORE:\n${this.data}\n-----------`;
 
         if (newMsgContent === "__[A TRADUIRE]__") {
-            return;
+            return {hasBeenSaved: false, path: this.path};
         }
 
         let originalData = this.data;

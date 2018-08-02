@@ -85,7 +85,7 @@ module.exports = {
 
                 const bad_words = [
                     "ta gueule", "salope", "pute", " tg ", "connard", "connasse", "gros con", "sale con", "t'es trop con",
-                    "va te faire foutre", "t'es con", "fils de pute", "nique ta mère", "pédé ", "enculé"
+                    "va te faire foutre", "t'es con", "fils de pute", "nique ta mère", "pédé ", "enculé", "conne"
                 ];
 
                 let yes = false;

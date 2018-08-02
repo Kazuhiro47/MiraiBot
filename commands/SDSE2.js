@@ -96,8 +96,13 @@ class Menu {
     }
 }
 
+Array.prototype.unique = function () {
+    return Array.from(new Set(this));
+};
+
 class SDSE2Editor {
 
+    //todo: make a direct link accessor for a specific file
     constructor(message, client) {
         this.logChannel = client.channels.find("id", "452118364161048576");
 
@@ -137,6 +142,8 @@ class SDSE2Editor {
         SDSE2.constructDupesDB().then(dupeDB => {
             this.dupeDB = dupeDB;
         }).catch(console.error);
+
+        this.currScenesToSave = [];
 
         return this;
     }
@@ -210,11 +217,46 @@ class SDSE2Editor {
         return this.fileChoice.getChoice(this.fileChoice.sentMessage);
     }
 
+    _jump() {
+        return new Promise((resolve, reject) => {
+            this.channel.send("Veuillez taper un nombre").then(jumpMsg => {
+                const getJumpNb = this.channel.createMessageCollector(m => m.author.id !== bot_data.bot_values.bot_id && m.author.id && this.translator.id);
+                getJumpNb.on('collect', jumpNb => {
+                    if (isNaN(parseInt(jumpNb.content))) {
+                        this.logMessage.edit(`${this.logMessage.content}\n\nErreur lors du jump : nombre invalide`).catch(console.error);
+                        jumpMsg.delete().catch(console.error);
+                        getJumpNb.stop();
+                    } else {
+                        this.menu.jumpToPage(parseInt(jumpNb.content) - 1).catch(console.error);
+                        this.logMessage.edit(`${this.logMessage.content.replace("\n\nErreur lors du jump : nombre invalide", "")}`).catch(console.error);
+                        jumpMsg.delete().catch(console.error);
+                        getJumpNb.stop();
+                    }
+                });
+                getJumpNb.on("end", collected => {
+                    collected.forEach(element => {
+                        element.delete().catch(console.error);
+                    });
+                    return resolve(true);
+                });
+            }).catch(console.error);
+        });
+    }
+
     _launchFileBrowser() {
         this.menu.reactionHandler.initCollector(
             (reaction) => {
                 if (reaction.count === 2) {
 
+                    if (reaction.emoji.name === "🈁") {
+                        reaction.remove(this.translator).catch(() => true);
+                        this.fileChoice.reactionHandler.collector.stop();
+                        this._jump().then(() => {
+                            this._getFileChoice().then(fileChoice => {
+                                this._openFileFolder(this.menu.pages[this.menu.index].fields[fileChoice].name).catch(console.error);
+                            }).catch(console.error);
+                        }).catch(console.error);
+                    }
                     if (reaction.emoji.name === "⬅") {
                         reaction.remove(this.translator).catch(() => true);
                         this.fileChoice.reactionHandler.collector.stop();
@@ -328,9 +370,7 @@ class SDSE2Editor {
         let embedList = this._getEmbedList();
 
         this.menu.currMessage.edit(embedList[0]).catch(console.error);
-        await this.menu.reactionHandler.addReaction("⬅");
-        await this.menu.reactionHandler.addReaction("➡");
-        await this.menu.reactionHandler.addReaction("🔙");
+        await this.menu.reactionHandler.addReactionList(["🔙", "⬅", "➡", "🈁"]);
 
     }
 
@@ -421,6 +461,9 @@ class SDSE2Editor {
     }
 
     _initializeFileNavigation() {
+
+        //todo: add similarity sub menu navigator
+
         let initialLogMessageContent = this.logMessage.content;
         this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
         this.menu.reactionHandler.removeReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
@@ -437,64 +480,71 @@ class SDSE2Editor {
                         this.menu.reactionHandler.removeReactionList(["⬅", "➡", "💾", "🈁"]).catch(console.error);
                         this.menu.resetReactionHandler();
                         this._initializeLineEditor();
-                    }
-                    if (reaction.emoji.name === "💾") {
+                    } else if (reaction.emoji.name === "💾") {
                         this._saveAll().then(() => {
                             reaction.remove(this.translator).catch(() => true);
                         }).catch(console.error);
-                    }
-                    if (reaction.emoji.name === "🈁") {
+                    } else if (reaction.emoji.name === "🈁") {
                         reaction.remove(this.translator).catch(() => true);
-                        this.channel.send("Veuillez taper un nombre").then(jumpMsg => {
-                            const getJumpNb = this.channel.createMessageCollector(m => m.author.id !== bot_data.bot_values.bot_id && m.author.id && this.translator.id);
-                            getJumpNb.on('collect', jumpNb => {
-                                if (isNaN(parseInt(jumpNb.content))) {
-                                    this.logMessage.edit(`${this.logMessage.content}\n\nErreur lors du jump : nombre invalide`).catch(console.error);
-                                    jumpMsg.delete().catch(console.error);
-                                    getJumpNb.stop();
-                                } else {
-                                    this.menu.jumpToPage(parseInt(jumpNb.content) - 1).catch(console.error);
-                                    this.logMessage.edit(`${this.logMessage.content.replace("\n\nErreur lors du jump : nombre invalide", "")}`).catch(console.error);
-                                    jumpMsg.delete().catch(console.error);
-                                    getJumpNb.stop();
-                                }
-                            });
-                            getJumpNb.on("end", collected => {
-                                collected.forEach(element => {
-                                    element.delete().catch(console.error);
-                                });
-                            });
-                        }).catch(console.error);
-                    }
-                    if (reaction.emoji.name === "🈳") {
+                        this._jump().catch(console.error);
+                    } else if (reaction.emoji.name === "🈳") {
                         reaction.remove(this.translator).catch(() => true);
                         if (this.logMessage.content.indexOf(this.menu.pages[this.menu.index].fields[2].value) === -1) {
                             this.logMessage.edit(`${this.menu.pages[this.menu.index].fields[2].value}\n${this.logMessage.content}`).catch(console.error);
                         }
-                    }
-                    if (reaction.emoji.name === "⬅") {
+                    } else if (reaction.emoji.name === "⬅") {
                         reaction.remove(this.translator).catch(() => true);
                         this.logMessage.edit(initialLogMessageContent).catch(console.error);
                         this.menu.previousPage().then(() => {
                         }).catch(console.error);
-                    }
-                    if (reaction.emoji.name === "➡") {
+                    } else if (reaction.emoji.name === "➡") {
                         reaction.remove(this.translator).catch(() => true);
                         this.logMessage.edit(initialLogMessageContent).catch(console.error);
                         this.menu.nextPage().then(() => {
                         }).catch(() => true);
-                    }
-                    if (reaction.emoji.name === "🔙") {
-                        reaction.remove(this.translator).catch(() => true);
+                    } else if (reaction.emoji.name === "🔙") {
                         this.logMessage.edit("Rapport d'activité sdse2").catch(console.error);
-                        this.fileChoice.reactionHandler.collector.stop();
-                        this.menu.reactionHandler.removeReactionList(["💾", "📝", "🈁", "🈳"]).catch(console.error);
-                        this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
-                        this.menu.resetPages();
-                        this.menu.resetReactionHandler();
-                        this._printFileChoice().then(() => {
-                            this._launchFileBrowser();
-                        }).catch(console.error);
+                        if (this.currScenesToSave.length > 0) {
+                            this.channel.send("Des changements n'ont pas été sauvegardés. Voulez vous le faire ?").then(msg => {
+                                let wantToSaveChanges = new ReactionHandler(msg, ["✅", "❌"]);
+                                wantToSaveChanges.addReactions().catch(console.error);
+                                wantToSaveChanges.initCollector((reaction) => {
+                                    if (reaction.count === 2) {
+                                        if (reaction.emoji.name === "✅") {
+                                            this._saveAll().catch(err => {
+                                                console.error(err);
+                                                this.currScenesToSave = [];
+                                            });
+                                            wantToSaveChanges.collector.stop();
+                                        } else if (reaction.emoji.name === "❌") {
+                                            this.currScenesToSave = [];
+                                            wantToSaveChanges.collector.stop();
+                                        }
+                                    }
+                                }, () => {
+                                    msg.delete().catch(console.error);
+                                    reaction.remove(this.translator).catch(() => true);
+                                    this.fileChoice.reactionHandler.collector.stop();
+                                    this.menu.reactionHandler.removeReactionList(["💾", "📝", "🈁", "🈳"]).catch(console.error);
+                                    this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
+                                    this.menu.resetPages();
+                                    this.menu.resetReactionHandler();
+                                    this._printFileChoice().then(() => {
+                                        this._launchFileBrowser();
+                                    }).catch(console.error);
+                                });
+                            }).catch(console.error);
+                        } else {
+                            reaction.remove(this.translator).catch(() => true);
+                            this.fileChoice.reactionHandler.collector.stop();
+                            this.menu.reactionHandler.removeReactionList(["💾", "📝", "🈁", "🈳"]).catch(console.error);
+                            this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
+                            this.menu.resetPages();
+                            this.menu.resetReactionHandler();
+                            this._printFileChoice().then(() => {
+                                this._launchFileBrowser();
+                            }).catch(console.error);
+                        }
                     }
 
                 }
@@ -544,13 +594,22 @@ class SDSE2Editor {
                         if (reaction.emoji.name === "✅") {
                             this.translationGetter.stop();
                             this.menu.pages[this.menu.index].fields[0].value = this.msgBuffer.content.slice(3, this.msgBuffer.content.length - 3);
+                            this._updateFileDupes();
+
                             this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
+
+                            this.currScenesToSave.push({
+                                    line: this.currScenes[this.menu.index].line,
+                                    index: this.menu.index
+                                }
+                            );
+                            this.currScenesToSave = this.currScenesToSave.unique();
+
                             guideMsg.delete().catch(console.error);
                             this.msgBuffer.delete().catch(console.error);
                             translationBufferReaction.collector.stop();
                             this._initializeFileNavigation();
-                        }
-                        if (reaction.emoji.name === "❌") {
+                        } else if (reaction.emoji.name === "❌") {
                             this.translationGetter.stop();
                             guideMsg.delete().catch(console.error);
                             this.msgBuffer.delete().catch(console.error);
@@ -568,17 +627,50 @@ class SDSE2Editor {
 
                         if (reaction.emoji.name === "🔙") {
                             this.translationGetter.stop();
-                            reaction.remove(this.translator).catch(() => true);
                             guideMsg.delete().catch(console.error);
                             this.msgBuffer.delete().catch(console.error);
-                            this.fileChoice.reactionHandler.collector.stop();
-                            this.menu.reactionHandler.removeReactionList(["📝", "💾"]).catch(console.error);
-                            this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
-                            this.menu.resetPages();
-                            this.menu.resetReactionHandler();
-                            this._printFileChoice().then(() => {
-                                this._launchFileBrowser();
-                            }).catch(console.error);
+
+                            if (this.currScenesToSave.length > 0) {
+                                this.channel.send("Des changements n'ont pas été sauvegardés. Voulez vous le faire ?").then(msg => {
+                                    let wantToSaveChanges = new ReactionHandler(msg, ["✅", "❌"]);
+                                    wantToSaveChanges.addReactions().catch(console.error);
+                                    wantToSaveChanges.initCollector((reaction) => {
+                                        if (reaction.count === 2) {
+                                            if (reaction.emoji.name === "✅") {
+                                                this._saveAll().catch(err => {
+                                                    console.error(err);
+                                                    this.currScenesToSave = [];
+                                                });
+                                                wantToSaveChanges.collector.stop();
+                                            } else if (reaction.emoji.name === "❌") {
+                                                this.currScenesToSave = [];
+                                                wantToSaveChanges.collector.stop();
+                                            }
+                                        }
+                                    }, () => {
+                                        msg.delete().catch(console.error);
+                                        reaction.remove(this.translator).catch(() => true);
+                                        this.fileChoice.reactionHandler.collector.stop();
+                                        this.menu.reactionHandler.removeReactionList(["📝", "💾"]).catch(console.error);
+                                        this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
+                                        this.menu.resetPages();
+                                        this.menu.resetReactionHandler();
+                                        this._printFileChoice().then(() => {
+                                            this._launchFileBrowser();
+                                        }).catch(console.error);
+                                    });
+                                }).catch(console.error);
+                            } else {
+                                reaction.remove(this.translator).catch(() => true);
+                                this.fileChoice.reactionHandler.collector.stop();
+                                this.menu.reactionHandler.removeReactionList(["📝", "💾"]).catch(console.error);
+                                this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
+                                this.menu.resetPages();
+                                this.menu.resetReactionHandler();
+                                this._printFileChoice().then(() => {
+                                    this._launchFileBrowser();
+                                }).catch(console.error);
+                            }
                         }
 
                     }
@@ -592,6 +684,32 @@ class SDSE2Editor {
 
     }
 
+    _updateFileDupes() {
+        let thisFile = this.currScenes[this.menu.index].line.path.replace(/\\/g, "/").split("/").slice(5).join("\\");
+        let number = this.dupeDB.pathToNumber[thisFile];
+
+        if (number === undefined) {
+            return;
+        }
+        let dupes = this.dupeDB.numberToPath[number];
+
+        let basePath = thisFile.slice(0, thisFile.length - 8);
+        dupes.forEach(dupePath => {
+            if (dupePath.slice(0, dupePath.length - 8) === basePath) {
+
+                let index = parseInt(dupePath.slice(dupePath.length - 8, dupePath.length - 4));
+
+                this.menu.pages[index].fields[0].value = this.menu.pages[this.menu.index].fields[0].value;
+
+                this.currScenesToSave.push({
+                    line: this.currScenes[index].line,
+                    index: index
+                });
+                this.currScenesToSave = this.currScenesToSave.unique();
+            }
+        })
+    }
+
     async _saveLine(line) {
 
         let newMsgContent = this.menu.pages[line.index].fields[0].value;
@@ -602,31 +720,38 @@ class SDSE2Editor {
 
     async _saveAll() {
 
-        let fileToSave = [];
+        let fileToSavePromises = [];
 
-        let scenes = this.currScenes;
-        let scene;
-
+        let scenes = this.currScenesToSave;
         for (let i = 0; i < scenes.length; i++) {
-            scene = scenes[i];
-
-            fileToSave = fileToSave.concat(await SDSE2.getDupesOf(scene.line, this.dupeDB, i));
-
+            fileToSavePromises.push(SDSE2.getDupesOf(scenes[i].line, this.dupeDB, scenes[i].index));
         }
+        this.currScenesToSave = [];
+
+        let fileToSaveArray = await Promise.all(fileToSavePromises);
+
+        let fileToSave = [];
+        fileToSaveArray.forEach(dupesArray => {
+            fileToSave = fileToSave.concat(dupesArray);
+        });
+
+        console.log(`Dupe collected, ${fileToSave.length} files to save`);
 
         let savingInfoPromises = [];
 
-        for (let i = 0 ; i < fileToSave.length ; i++) {
+        for (let i = 0; i < fileToSave.length; i++) {
             savingInfoPromises.push(this._saveLine(fileToSave[i]));
         }
 
         let filesToSave = await Promise.all(savingInfoPromises);
 
         if (filesToSave.length === 0) {
+            console.error("No files saved");
             return;
         }
 
         if (filesToSave.length === 1 && filesToSave[0].hasBeenSaved === false) {
+            console.error(`${filesToSave[0].path} not saved`);
             return;
         }
 
@@ -637,7 +762,11 @@ class SDSE2Editor {
             }
         });
 
-        this.logChannel.send(`${this.translator.username} modified ${filesToSave[0].path} and ${fileSaved.length - 1} other files.`).catch(console.error);
+        if (fileSaved.length === 1) {
+            this.logChannel.send(`${this.translator.username} modified ${filesToSave[0].path}.`).catch(console.error);
+        } else {
+            this.logChannel.send(`${this.translator.username} modified ${filesToSave[0].path} and ${fileSaved.length - 1} other files.`).catch(console.error);
+        }
         this.logMessage.edit(`${this.logMessage.content}\n\n${fileSaved.length} fichier(s) sauvegardé(s)`).catch(console.error);
         this.totalFilesModified += fileSaved.length;
 
