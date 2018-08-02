@@ -117,12 +117,12 @@ class SDSE2Editor {
         this.channel = message.channel;
         this.message = message;
 
-        this.menuChoice = undefined;
-        this.fileChoice = undefined;
+        this.menuChoice = null;
+        this.fileChoice = null;
 
         this.menu = new Menu();
-        this.embed = undefined;
-        this.logMessage = undefined;
+        this.embed = null;
+        this.logMessage = null;
         this.partList = [];
 
         this.logmsginit = "Rapport d'activité sdse2\n";
@@ -134,11 +134,11 @@ class SDSE2Editor {
 
         this.currScenes = [];
 
-        this.translationBuffer = undefined;
-        this.translationGetter = undefined;
-        this.msgBuffer = undefined;
+        this.translationBuffer = null;
+        this.translationGetter = null;
+        this.msgBuffer = null;
 
-        this.dupeDB = undefined;
+        this.dupeDB = null;
         SDSE2.constructDupesDB().then(dupeDB => {
             this.dupeDB = dupeDB;
         }).catch(console.error);
@@ -200,6 +200,8 @@ class SDSE2Editor {
         this.menuChoice = new MenuChoice(this.message, this.embed.fields, this.embed);
         this.menuChoice.sentMessage = this.menu.currMessage;
         this.partChoice = await this.menuChoice.getChoice(this.menuChoice.sentMessage);
+
+        //if (this.partChoice)
 
         await this._printFileChoice();
         this._launchFileBrowser();
@@ -428,10 +430,15 @@ class SDSE2Editor {
                     }
                 }
 
+                let speaker = SDSE2.CHAR_IDS[scene.speaker];
+                if (!speaker) {
+                    speaker = "???";
+                }
+
                 if (scene.line.text.french === "") {
-                    embed.addField("Texte Français", "__[A TRADUIRE]__");
+                    embed.addField(`Texte Français | Locut(rice/eur) *${speaker}*`, "__[A TRADUIRE]__");
                 } else {
-                    embed.addField("Texte Français", scene.line.text.french);
+                    embed.addField(`Texte Français | Locut(rice/eur) *${speaker}*`, scene.line.text.french);
                 }
                 if (scene.line.text.english === "") {
                     return;
@@ -570,23 +577,10 @@ class SDSE2Editor {
                 this.translationGetter = this.channel.createMessageCollector((m) => m.author.id !== bot_data.bot_values.bot_id);
                 this.translationGetter.on("collect", m => {
                     m.delete().then(m => {
-
                         let content = SDSE2.formatContent(m.content);
 
                         this.msgBuffer.edit(`\`\`\`${content}\`\`\``).catch(console.error);
-                    }).catch(() => {
-                        messageToListen = m;
-
-                        this.client.on("messageUpdate", (oldMessage, newMessage) => {
-
-                            if (oldMessage.id === messageToListen.id) {
-                                this.msgBuffer.edit(`\`\`\`${newMessage.content}\`\`\``).catch(console.error);
-                            }
-
-                        });
-
-                        this.translationGetter.stop();
-                    });
+                    }).catch(console.error);
                 });
 
                 translationBufferReaction.initCollector((reaction) => {
@@ -596,19 +590,21 @@ class SDSE2Editor {
                             this.menu.pages[this.menu.index].fields[0].value = this.msgBuffer.content.slice(3, this.msgBuffer.content.length - 3);
                             this._updateFileDupes();
 
-                            this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
-
-                            this.currScenesToSave.push({
-                                    line: this.currScenes[this.menu.index].line,
-                                    index: this.menu.index
-                                }
-                            );
-                            this.currScenesToSave = this.currScenesToSave.unique();
-
                             guideMsg.delete().catch(console.error);
                             this.msgBuffer.delete().catch(console.error);
                             translationBufferReaction.collector.stop();
-                            this._initializeFileNavigation();
+                            this.menu.currMessage.edit(this.menu.pages[this.menu.index]).then(() => {
+                                this.currScenesToSave.push({
+                                        line: this.currScenes[this.menu.index].line,
+                                        index: this.menu.index
+                                    }
+                                );
+                                this.currScenesToSave = this.currScenesToSave.unique();
+                                this._initializeFileNavigation();
+                            }).catch(err => {
+                                console.error(err);
+                                this._initializeFileNavigation();
+                            });
                         } else if (reaction.emoji.name === "❌") {
                             this.translationGetter.stop();
                             guideMsg.delete().catch(console.error);

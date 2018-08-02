@@ -11,6 +11,56 @@ class MemberUserXP {
 
 }
 
+let check_bad_words = () => new Promise((resolve, reject) => {
+
+    let ctnt = message.content.toLowerCase().trim();
+
+    while (ctnt.indexOf('*') !== -1) {
+        ctnt = ctnt.replace('*', '');
+    }
+
+    const short_bad_words = ['tg', 'pd', "ntm", "fdp", "conne"];
+
+    let lol = false;
+
+    short_bad_words.forEach(shortBadWord => {
+        if (ctnt.endsWith(" " + shortBadWord) || ctnt.startsWith(shortBadWord + " ")) {
+
+            ctnt = ctnt.replace(shortBadWord, '||');
+            lol = true;
+        }
+    });
+
+    if (lol) {
+        return resolve(ctnt);
+    }
+
+    if (ctnt === "tg" || ctnt === 'pd') {
+        return resolve("||");
+    }
+
+    const bad_words = [
+        "ta gueule", "salope", "pute", " tg ", "connard", "connasse", "gros con", "sale con", "t'es trop con",
+        "va te faire foutre", "t'es con", "fils de pute", "nique ta mère", "pédé ", "enculé", "conne."
+    ];
+
+    let yes = false;
+
+    bad_words.forEach(bad_word => {
+        if (ctnt.indexOf(bad_word) !== -1) {
+            ctnt = ctnt.replace(bad_word, '|||||||');
+            yes = true;
+        }
+    });
+
+    if (yes) {
+        resolve(ctnt);
+    } else {
+        reject(true);
+    }
+
+});
+
 let sendMsgToModerators = (client, msg) => {
 
     let miraiteam = client.guilds.find('id', "168673025460273152");
@@ -27,7 +77,7 @@ let sendMsgToModerators = (client, msg) => {
 
 module.exports = {
 
-    MemberUserXP,
+    MemberUserXP, check_bad_words,
 
     check_message: function (client, message) {
 
@@ -54,56 +104,6 @@ module.exports = {
 
         const exceptChannels = ["danganronpa 1", "danganronpa 2", "discord sdse2", "danganronpa another episode"];
         if (message.channel.parentID !== "473236555088265266" && message.author.id !== bot_data.bot_values.bot_id) {
-
-            let check_bad_words = () => new Promise((resolve, reject) => {
-
-                let ctnt = message.content.toLowerCase().trim();
-
-                while (ctnt.indexOf('*') !== -1) {
-                    ctnt = ctnt.replace('*', '');
-                }
-
-                const short_bad_words = ['tg', 'pd', "ntm", "fdp"];
-
-                let lol = false;
-
-                short_bad_words.forEach(shortBadWord => {
-                    if (ctnt.endsWith(" " + shortBadWord) || ctnt.startsWith(shortBadWord + " ")) {
-
-                        ctnt = ctnt.replace(shortBadWord, '||');
-                        lol = true;
-                    }
-                });
-
-                if (lol) {
-                    return resolve(ctnt);
-                }
-
-                if (ctnt === "tg" || ctnt === 'pd') {
-                    return resolve("||");
-                }
-
-                const bad_words = [
-                    "ta gueule", "salope", "pute", " tg ", "connard", "connasse", "gros con", "sale con", "t'es trop con",
-                    "va te faire foutre", "t'es con", "fils de pute", "nique ta mère", "pédé ", "enculé", "conne"
-                ];
-
-                let yes = false;
-
-                bad_words.forEach(bad_word => {
-                    if (ctnt.indexOf(bad_word) !== -1) {
-                        ctnt = ctnt.replace(bad_word, '|||||||');
-                        yes = true;
-                    }
-                });
-
-                if (yes) {
-                    resolve(ctnt);
-                } else {
-                    reject(true);
-                }
-
-            });
 
             check_bad_words().then(ctnt => {
                 message.delete().then(msg => {

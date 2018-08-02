@@ -85,7 +85,6 @@ describe("format content function tests", () => {
 
         let msg = "This is a test";
         let formatedMsg = SDSE2.formatContent(msg);
-
         assert.equal(formatedMsg, msg);
 
     });

@@ -74,12 +74,6 @@ client.on('message', message => {
     const command = args.shift().toLowerCase();
 
     if (!message.content.startsWith(bot_data.bot_values.bot_prefix)) {
-        try {
-            require(`./commands/${command}.js`);
-            message.channel.send("Le préfixe du bot est ```/```, la commande /" + command + " existe.").catch(console.error);
-        } catch (e) {
-            return;
-        }
         return;
     }
 

@@ -3225,47 +3225,47 @@ let ALL_IMG = {
 };
 
 let CHAR_IDS = {
-    "HINATA":           0x00,
-    "KOMAEDA":          0x01,
-    "TOGAMI":           0x02,
-    "TANAKA":           0x03,
-    "SOUDA":            0x04,
-    "HANAMURA":         0x05,
-    "NIDAI":            0x06,
-    "KUZURYUU":         0x07,
-    "OWARI":            0x08,
-    "NANAMI":           0x09,
-    "SONIA":            0x0A,
-    "SAIONJI":          0x0B,
-    "KOIZUMI":          0x0C,
-    "TSUMIKI":          0x0D,
-    "MIODA":            0x0E,
-    "PEKOYAMA":         0x0F,
-    "MONOKUMA":         0x10,
-    "MONOMI":           0x11,
-    "ENOSHIMA":         0x12,
-    "MECHA_NIDAI":      0x13,
-    "NAEGI":            0x14,
-    "KIRIGIRI":         0x15,
-    "TOGAMI_REAL":      0x16,
-    "HANAMURA_MOM":     0x17,
-    "ALTER_EGO":        0x18,
-    "MINI_NIDAI":       0x19,
-    "MONOKUMA_MONOMI":  0x1A,
-    "NARRATION":        0x1B,
-    "USAMI":            0x27,
-    "KIRAKIRA":         0x28,
-    "NO_NAME":          0x29,
-    "ENOSHIMA_2":       0x30,
-    "GIRL_A":           0x32,
-    "GIRL_B":           0x33,
-    "GIRL_C":           0x34,
-    "GIRL_D":           0x35,
-    "GIRL_E":           0x36,
-    "BOY_F":            0x37,
-    "NO_NAME_2":        0x38,
-    "LAST_SPRITE":      0x3E,
-    "BLANK":            0x3F,
+    0x00: "HINATA",
+    0x01: "KOMAEDA",
+    0x02: "TOGAMI",
+    0x03: "TANAKA",
+    0x04: "SOUDA",
+    0x05: "HANAMURA",
+    0x06: "NIDAI",
+    0x07: "KUZURYUU",
+    0x08: "OWARI",
+    0x09: "NANAMI",
+    0x0A: "SONIA",
+    0x0B: "SAIONJI",
+    0x0C: "KOIZUMI",
+    0x0D: "TSUMIKI",
+    0x0E: "MIODA",
+    0x0F: "PEKOYAMA",
+    0x10: "MONOKUMA",
+    0x11: "MONOMI",
+    0x12: "ENOSHIMA",
+    0x13: "MECHA_NIDAI",
+    0x14: "NAEGI",
+    0x15: "KIRIGIRI",
+    0x16: "TOGAMI_REAL",
+    0x17: "HANAMURA_MOM",
+    0x18: "ALTER_EGO",
+    0x19: "MINI_NIDAI",
+    0x1A: "MONOKUMA_MONOMI",
+    0x1B: "NARRATION",
+    0x27: "USAMI",
+    0x28: "KIRAKIRA",
+    0x29: "???",
+    0x30: "ENOSHIMA_2",
+    0x32: "GIRL_A",
+    0x33: "GIRL_B",
+    0x34: "GIRL_C",
+    0x35: "GIRL_D",
+    0x36: "GIRL_E",
+    0x37: "BOY_F",
+    0x38: "????",
+    0x3E: "LAST_SPRITE",
+    0x3F: "BLANK",
 };
 
 class DR2File {
@@ -3334,9 +3334,8 @@ class DR2File {
                         return;
                     }
                     try {
-                        //todo: get speaker
                         let infos = line.split("\r\n");
-                        if (infos[4].split(':')[1] !== undefined) {
+                        if (infos[6].split(':')[1] !== undefined) {
                             this.scenesInfo.push({
                                 index: index,
                                 bgd: parseInt(infos[1].split(':')[1]),
@@ -3345,7 +3344,13 @@ class DR2File {
                                     char_id: parseInt(infos[3].split('(')[1].split(',')[0]),
                                     sprite_id: parseInt(infos[3].split('(')[1].split(',')[1])
                                 },
-                                path: infos[4].split(':')[1]
+                                speaker: infos[4].split(':')[1],
+                                voice: {
+                                    chapter: infos[5].split(':')[1].split(',')[0],
+                                    char_id: infos[5].split(':')[1].split(',')[1],
+                                    voice_id: infos[5].split(':')[1].split(',')[2],
+                                },
+                                path: infos[6].split(':')[1]
                             });
                             index += 1;
                         }
@@ -3626,7 +3631,11 @@ let formatContent = (content) => {
 
         newContent += content[i];
         if (!inClt) {
-            length += 1;
+            if (content[i] === "\n") {
+                length = 0;
+            } else {
+                length += 1;
+            }
         }
     }
 

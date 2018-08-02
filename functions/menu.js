@@ -24,6 +24,8 @@ class MenuChoice {
         this.leftToken = "---[__";
         this.rightToken = "__]---";
 
+        this.reactionHandler = undefined;
+
         if (embed) {
             this.menuMessage = embed;
             this.messageIsSent = true;
