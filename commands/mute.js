@@ -28,7 +28,7 @@ let mute = (client, message, args) => new Promise((resolve, reject) => {
         message.guild.channels.array().forEach(channel => {
 
             if (channel.type === "text") {
-                promises.push(channel.overwritePermissions(target, {'SEND_MESSAGES': false}));
+                promises.push(channel.overwritePermissions(target, {'SEND_MESSAGES': false, 'ADD_REACTIONS': false}));
             }
 
         });
