@@ -1,160 +1,49 @@
 const bot_data = require("../bot_data");
-const MemberUserXP = require("../functions/parsing_functions").MemberUserXP;
-const RichEmbed = require("discord.js").RichEmbed;
+const getChannelMessages = require("../functions/analyse_channel").getChannelMessages;
 
-exports.run = (client, message, args) => {
+let updateXpCmd = (client, message, args) => new Promise((resolve, reject) => {
 
     if (!bot_data.bot_values.bot_owners.includes(message.author.id)) {
         message.channel.send("Tu n'as pas la permission.").catch(console.error);
-        return;
+        return reject(message.author.username + " n'as pas la permission");
     }
 
-    function analyse_channel(chan, args) {
+    let channel = client.channels.get("314122440420884480");
+    let channels = channel.guild.channels.array();
 
-        return new Promise(async (resolve, reject) => {
+    let promises = [];
+    let messages = [];
 
-            let msg_collected = 42;
+    for (let i = 0; i < channels.length; i++) {
+        console.log("Analysing " + channels[i].name);
+        promises.push(getChannelMessages(client, channels[i], args));
+    }
 
-            try {
-                await chan.fetchMessages({limit: 1});
-            } catch (e) {
-                console.error(`${chan.type}, ${chan.id}`);
-                resolve(true);
-            }
-            let messages = await chan.fetchMessages({limit: 1});
-            let message_id = messages.first().id;
-            let count = 0;
-
-            async function retrieve_message(id) {
-
-                let messages = await chan.fetchMessages({limit: 100, before: id});
-
-                if (messages.array().length === 0) {
-                    console.log(`${chan.name} analysed`);
-                    return resolve(chan);
-                }
-
-                if (!messages.last()) {
-                    console.error(messages.length);
-                    console.error("COLLECTION = " + messages);
-                }
-                message_id = messages.last().id;
-
-                messages.array().forEach(function (msg_obj) {
-
-                    if (!msg_obj.member) {
-                        return;
-                    }
-
-                    if (args.length !== 0) {
-
-                        let members = message.guild.members.keyArray();
-                        let member;
-                        let target = null;
-
-                        members.forEach(userId => {
-
-                            member = message.guild.members.find("id", userId);
-
-                            if (member.nickname) {
-                                if (member.nickname.toLowerCase().trim().includes(args.join(" ").toLowerCase().trim())) {
-                                    target = member;
-                                }
-                            }
-                            if (member.user.username.toLowerCase().trim().includes(args.join(" ").toLowerCase().trim())) {
-                                target = member;
-                            }
-                        });
-
-                        if (target === null) {
-                            message.channel.send("Utilisateur introuvable").catch(console.error);
-                            return reject(null);
-                        } else {
-
-                            if (target.id !== msg_obj.author.id) {
-                                return;
-                            }
-
-                        }
-
-                    }
-
-                    let memberXPData = client.memberXP.get(msg_obj.author.id);
-
-                    if (!memberXPData) {
-                        client.memberXP.set(msg_obj.author.id, new MemberUserXP(msg_obj.author.id));
-                        memberXPData = client.memberXP.get(msg_obj.author.id);
-                    }
-
-                    let palier_reached = memberXPData.level;
-
-                    memberXPData.xp += msg_obj.content.length / 10;
-
-                    Object.keys(bot_data.xp_table).forEach(palier => {
-
-                        if (memberXPData.xp > bot_data.xp_table[palier].xp)
-                            palier_reached = palier;
-
-                    });
-
-                    if (palier_reached > memberXPData.level) {
-                        memberXPData.level += 1;
-
-                        message.channel.send(new RichEmbed()
-                            .addField(
-                                `**${msg_obj.member.displayName}** est passé à la **Division ${bot_data.xp_table[memberXPData.level].string}**`,
-                                `*${bot_data.xp_table[memberXPData.level].description}*`)
-                            .setColor(message.guild.me.displayColor)
-                        ).catch(console.error);
-
-                        message.channel.guild.roles.array().forEach(role => {
-
-                            if (role.name.split(' ')[1] === bot_data.xp_table[memberXPData.level].string) {
-                                if (msg_obj.member) {
-                                    msg_obj.member.addRole(role).catch(err => {
-                                        console.error(err);
-                                        message.channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
-                                    });
-                                } else {
-                                    message.channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
-                                }
-                            }
-
-                        });
-
-                    }
-
-                    client.memberXP.set(msg_obj.author.id, memberXPData);
-
-                    count += 1;
-                    if (count % 500 === 0) console.log(`${chan.name}: Successfully analysed (${count}) messages. (${msg_obj.content})`);
-
-                });
-
-                msg_collected = messages;
-                return (retrieve_message(message_id));
-
-
-            }
-
-            retrieve_message(message_id).catch(console.error);
-
-
+    Promise.all(promises).then((messagesArrrays) => {
+        messagesArrrays.forEach(array => {
+            messages = messages.concat(array);
         });
 
-    }
+        messages = messages.filter((msg) => {
+            return msg.member && !msg.author.bot
+        });
 
-    let updateXP = async () => {
-        let channels = message.guild.channels.array();
+        channel.send("Update done.").then(() => {
+            resolve("Done");
+        }).catch(err => {
+            console.error(err);
+        });
 
-        for (let i = 0; i < channels.length; i++) {
-            await analyse_channel(channels[i], args);
-        }
-        message.channel.send("Update done.").catch(console.error);
-    };
+    }).catch(err => {
+        console.error(err);
+    });
 
-    updateXP().then(() => {
-        console.log("Update XP Done !");
+});
+
+exports.run = (client, message, args) => {
+
+    updateXpCmd(client, message, args).then((msg) => {
+        console.log(msg);
     }).catch(console.error);
 
 };
