@@ -5,6 +5,7 @@ const SDSE2 = require("../functions/sdse_utils.js");
 const fs = require("fs");
 const ReactionHandler = require("../functions/reactionHandler.js").ReactionHandler;
 const MenuChoice = require("../functions/menu.js").MenuChoice;
+const Menu = require("../functions/menu.js").Menu;
 
 Number.prototype.pad = function (size) {
     let s = String(this);
@@ -14,101 +15,17 @@ Number.prototype.pad = function (size) {
     return s;
 };
 
-class Menu {
-
-    constructor(channel, additionnalReactions) {
-        this.index = 0;
-        this.reactionList = ["🔚"];
-        this.pages = [];
-        this.channel = channel;
-        this.reactionHandler = undefined;
-
-        this.currMessage = undefined;
-
-        if (additionnalReactions) {
-            this.reactionList = this.reactionList.concat(additionnalReactions);
-        }
-        console.log("Menu created");
-    }
-
-    addPage(embed) {
-        this.pages.push(embed);
-    }
-
-    resetPages() {
-        this.index = 0;
-        this.pages = this.pages.shift();
-    }
-
-    printFirstPage() {
-        return new Promise((resolve, reject) => {
-            this.index = 0;
-            this.channel.send(this.pages[this.index]).then(msg => {
-
-                this.currMessage = msg;
-                this.reactionHandler = new ReactionHandler(msg, this.reactionList);
-                this.reactionHandler
-                    .addReactions()
-                    .then(() => resolve(msg))
-                    .catch(err => reject(err));
-
-            }).catch(err => reject(err));
-        });
-    }
-
-    nextPage() {
-        return new Promise((resolve, reject) => {
-            if (this.index + 1 === this.pages.length) {
-                this.index = 0;
-            } else {
-                this.index += 1;
-            }
-            this.currMessage.edit(this.pages[this.index]).then(() => resolve(true))
-                .catch(err => reject(err));
-        });
-    }
-
-    jumpToPage(pageIndex) {
-        if (pageIndex < 0 || pageIndex > this.pages.length - 1) {
-            return new Promise((resolve, reject) => resolve(true));
-        }
-        this.index = pageIndex;
-        return this.currMessage.edit(this.pages[this.index]);
-    }
-
-    previousPage() {
-        return new Promise((resolve, reject) => {
-            if (this.index === 0) {
-                this.index = this.pages.length - 1;
-            } else {
-                this.index -= 1;
-            }
-            this.currMessage.edit(this.pages[this.index]).then(() => resolve(true))
-                .catch(err => reject(err));
-        });
-    }
-
-    resetReactionHandler() {
-        if (this.reactionHandler.collector) {
-            this.reactionHandler.collector.stop();
-        }
-        this.reactionHandler = new ReactionHandler(this.currMessage, this.reactionList);
-    }
-}
-
 Array.prototype.unique = function () {
     return Array.from(new Set(this));
 };
 
-class SDSE2Editor {
+class Editor {
 
-    //todo: make a direct link accessor for a specific file
     constructor(message, client) {
-        this.logChannel = client.channels.find("id", "452118364161048576");
+
+        this.logChannel = client.guilds.get("168673025460273152").channels.find("id", "452118364161048576");
 
         this.totalFilesModified = 0;
-        this.totalDR2FilesNumber = 66642;
-
         this.timeUsed = new Date();
 
         this.id = message.author.id;
@@ -125,13 +42,6 @@ class SDSE2Editor {
         this.logMessage = null;
         this.partList = [];
 
-        this.logmsginit = "Rapport d'activité sdse2\n";
-        if (!message.member)
-            this.logmsginit += "Le sdse est lancé en mp, les réactions seront donc à enlever manuellement.";
-        this.channel.send(this.logmsginit).then(msg => {
-            this.logMessage = msg;
-        }).catch(this.quitEditor);
-
         this.currScenes = [];
 
         this.translationBuffer = null;
@@ -139,34 +49,35 @@ class SDSE2Editor {
         this.msgBuffer = null;
 
         this.dupeDB = null;
-        SDSE2.constructDupesDB().then(dupeDB => {
-            this.dupeDB = dupeDB;
-        }).catch(console.error);
 
         this.currScenesToSave = [];
 
-        return this;
+        this.editorName = "";
+        this.SDSE_ALL_DIRS = "";
+
+        this.totalFilesNumber = 0;
+
     }
 
     _getInitialMsg() {
         this.embed = new RichEmbed().setColor(bot_data.bot_values.bot_color)
-            .setTitle("SDSE2-In-Discord | 🔚 pour quitter le SDSE2")
+            .setTitle(`${this.editorName}-In-Discord | 🔚 pour quitter le ${this.editorName}`)
             .setDescription(
                 "*Veuillez choisir une partie à traduire*\n\n" +
                 "Utilisez les réaction ⬇ et ⬆ pour choisir, puis 🆗 pour valider votre sélection"
             )
             .setFooter("Page 1/1 - Made by Kazuhiro");
 
-        Object.keys(ALL_DIRS).forEach(part => {
+        Object.keys(this.SDSE_ALL_DIRS).forEach(part => {
             if (part === "FTE") {
                 let length = 0;
-                Object.keys(ALL_DIRS[part]).forEach(character => {
-                    length += Object.keys(ALL_DIRS[part][character]).length;
+                Object.keys(this.SDSE_ALL_DIRS[part]).forEach(character => {
+                    length += Object.keys(this.SDSE_ALL_DIRS[part][character]).length;
                 });
                 this.embed.addField(part, `${length} fichiers`, true);
                 this.partList.push([part, true]);
             } else {
-                this.embed.addField(part, `${Object.keys(ALL_DIRS[part]).length} fichiers`, true);
+                this.embed.addField(part, `${Object.keys(this.SDSE_ALL_DIRS[part]).length} fichiers`, true);
                 this.partList.push([part, false]);
             }
         });
@@ -384,25 +295,27 @@ class SDSE2Editor {
                 "Utilisez la réaction 📝 pour modifier la ligne actuelle\n" +
                 `💾 sauvegarde les lignes du fichier actuel (${this.currentFileName} en l'occurrence), **N'OUBLIEZ PAS DE LE FAIRE**\n` +
                 "🈁 jump à une ligne précise\n" +
-                "🈳 récupère le texte japonais\n"
+                "🈳 récupère le texte japonais\n" +
+                "📘 ouvre le sous-menu des traductions récurrentes\n"
             );
     }
 
     async _openFileFolder(fileChoice) {
+        await this.logMessage.edit("Veuillez patienter...");
+
         this.currentFileName = fileChoice;
         let DR2File = new SDSE2.DR2File(fileChoice);
         this.currScenes = [];
 
-        await this.logMessage.edit("Veuillez patienter...");
         console.log(`Working directory : ${DR2File.directory}, ${fileChoice}`);
         if (DR2File.checkDir()) {
 
             await DR2File.computeScenesInfo();
 
+            console.log(`Scene number : ${DR2File.scenesInfo.length}`);
+
             this.menu.pages = [];
             this.menu.index = 0;
-
-            console.log(`Scene number : ${DR2File.scenesInfo.length}`);
 
             DR2File.scenesInfo.forEach(scene => {
 
@@ -475,7 +388,7 @@ class SDSE2Editor {
         this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
         this.menu.reactionHandler.removeReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
         this.menu.resetReactionHandler();
-        this.menu.reactionHandler.addReactionList(["⬅", "➡", "📝", "💾", "🈁", "🈳"]).catch(console.error);
+        this.menu.reactionHandler.addReactionList(["⬅", "➡", "📝", "💾", "🈁", "🈳", "📘"]).catch(console.error);
         this.menu.reactionHandler.initCollector(
             (reaction) => {
                 if (reaction.count === 2) {
@@ -484,7 +397,7 @@ class SDSE2Editor {
 
                     if (reaction.emoji.name === "📝") {
                         reaction.remove(this.translator).catch(() => true);
-                        this.menu.reactionHandler.removeReactionList(["⬅", "➡", "💾", "🈁"]).catch(console.error);
+                        this.menu.reactionHandler.removeReactionList(["⬅", "➡", "💾", "🈁", "🈳", "📘"]).catch(console.error);
                         this.menu.resetReactionHandler();
                         this._initializeLineEditor();
                     } else if (reaction.emoji.name === "💾") {
@@ -499,6 +412,10 @@ class SDSE2Editor {
                         if (this.logMessage.content.indexOf(this.menu.pages[this.menu.index].fields[2].value) === -1) {
                             this.logMessage.edit(`${this.menu.pages[this.menu.index].fields[2].value}\n${this.logMessage.content}`).catch(console.error);
                         }
+                    } else if (reaction.emoji.name === "📘") {
+                        reaction.remove(this.translator).catch(() => true);
+                        let terminology = new SDSE2.TerminologySubMenu(this.channel, this.translator);
+                        terminology.launchMenu().catch(console.error);
                     } else if (reaction.emoji.name === "⬅") {
                         reaction.remove(this.translator).catch(() => true);
                         this.logMessage.edit(initialLogMessageContent).catch(console.error);
@@ -731,6 +648,8 @@ class SDSE2Editor {
             fileToSave = fileToSave.concat(dupesArray);
         });
 
+        fileToSave = fileToSave.unique();
+
         console.log(`Dupe collected, ${fileToSave.length} files to save`);
 
         let savingInfoPromises = [];
@@ -779,6 +698,10 @@ class SDSE2Editor {
         this.menu.currMessage.delete().catch(console.error);
         this.logMessage.delete().catch(console.error);
 
+        this.gSettings = this.client.gSettings.get(this.message.guild.id);
+        this.gSettings.sdse2.splice(this.gSettings.sdse2.indexOf(this.channel.id), 1);
+        this.client.gSettings.set(this.message.guild.id, this.gSettings);
+
         let minutes = (new Date() - this.timeUsed) / 1000 / 60;
         let hours = minutes / 60;
         let timeUsed = `${(minutes % 60).toFixed()}m`;
@@ -788,19 +711,85 @@ class SDSE2Editor {
         this.channel.send(
             `SDSE2 de ${this.translator.username} fermé.\n` +
             `Durée d'utilisation : ${timeUsed}\n` +
-            `Fichiers modifiés : ${this.totalFilesModified}, soit ${(this.totalFilesModified / this.totalDR2FilesNumber * 100).toFixed(3)}% de la traduction totale.`
+            `Fichiers modifiés : ${this.totalFilesModified}, soit ${(this.totalFilesModified / this.totalFilesNumber * 100).toFixed(3)}% de la traduction totale.`
         ).catch(console.error);
+    }
+
+}
+
+class SDSE2Editor extends Editor {
+
+    //todo: make a direct link accessor for a specific file
+    constructor(message, client) {
+
+        super(message, client);
+
+        this.editorName = "SDSE2";
+        this.SDSE_ALL_DIRS = ALL_DIRS;
+
+        // Updating guild settings with sdse
+        this.gSettings = client.gSettings.get(message.guild.id);
+        if (!this.gSettings) {
+            client.gSettings.set(message.guild.id, bot_data.gSettings);
+            this.gSettings = client.gSettings.get(message.guild.id);
+        }
+        this.gSettings.sdse2.push(message.channel.id);
+        client.gSettings.set(message.guild.id, this.gSettings);
+
+        this.totalFilesNumber = 66642;
+
+        this.logmsginit = "Rapport d'activité sdse2\n";
+        if (!message.member)
+            this.logmsginit += "Le sdse est lancé en mp, les réactions seront donc à enlever manuellement.";
+        this.channel.send(this.logmsginit).then(msg => {
+            this.logMessage = msg;
+        }).catch(this.quitEditor);
+
+        SDSE2.constructDupesDB().then(dupeDB => {
+            this.dupeDB = dupeDB;
+        }).catch(console.error);
+
+        return this;
+    }
+
+    quitEditor() {
+        super.quitEditor();
+
+        let SDSE2Data = this.client.SDSE2Data.get(this.translator.id);
+        SDSE2Data.inUse = false;
+        this.client.SDSE2Data.set(this.translator.id, SDSE2Data);
     }
 
 }
 
 exports.run = (client, message) => {
 
-    if (message.member && message.member.roles.find("id", "473236153315885069")) {
+    const knownUsers = ["140033402681163776", "326699074524938242"];
+
+    let SDSE2Data = client.SDSE2Data.get(message.author.id);
+    if (!SDSE2Data) {
+        client.SDSE2Data.set(message.author.id, bot_data.SDSE2Data);
+        SDSE2Data = client.SDSE2Data.get(message.author.id);
+    }
+
+    if (SDSE2Data.inUse) {
+        message.channel.send("Veuillez fermer le sdse2 précédent si il y en a un.").catch(console.error);
+    }
+
+    if (message.member && (message.member.roles.find("id", "473236153315885069") || knownUsers.includes(message.author.id))) {
 
         let sdse = new SDSE2Editor(message, client);
 
-        sdse.initMenuSDSE().catch(console.error);
+        sdse.initMenuSDSE().then(() => {
+            SDSE2Data.inUse = true;
+            client.SDSE2Data.set(message.author.id, SDSE2Data);
+        }).catch(console.error);
+
+    } else {
+
+        message.channel.send("Demandez à <@140033402681163776> de vous attribuer le rôle Discord SDSE2").catch(console.error);
+
     }
+
 
 };

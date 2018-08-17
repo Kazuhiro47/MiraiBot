@@ -4,6 +4,7 @@ const Discord = require("discord.js");
 const client = new Discord.Client();
 const bot_data = require("../../bot_data.js");
 const fs = require("graceful-fs");
+const TerminologySubMenu = require("../../functions/sdse_utils").TerminologySubMenu;
 
 let testChannel;
 let testMsg;
@@ -184,6 +185,38 @@ describe('duplicate system', () => {
         line.retrieveContent();
         let dupes = await SDSE2.getDupesOf(line, await SDSE2.constructDupesDB());
         assert.equal(dupes.length, 4);
+    });
+
+});
+
+let channel;
+let user;
+
+describe("test on Terminology SDSE2 module", () => {
+
+    before("Init client", function() {
+        this.timeout(100000);
+        if (!client.readyAt) {
+            return client.login(bot_data.bot_values.bot_token);
+        }
+    });
+
+    it('should open correctly and close', async function () {
+
+        console.log("Test start");
+        user = client.users.find("id", "140033402681163776");
+        channel = client.channels.find("id", "314122440420884480");
+        let terminology = new TerminologySubMenu(channel, user);
+
+        assert.equal(await terminology.launchMenu(), true);
+
+    }).timeout(100000);
+
+    after("Deleting client", function() {
+        this.timeout(100000);
+        if (client.readyAt) {
+            return client.destroy();
+        }
     });
 
 });

@@ -2,6 +2,9 @@ const fs = require("graceful-fs");
 const detectCharacterEncoding = require('chardet').detectFileSync;
 const spawn = require("child_process").spawn;
 const bot_data = require("../bot_data.js");
+const ReactionHandler = require("./reactionHandler").ReactionHandler;
+const Menu = require("./menu").Menu;
+const RichEmbed = require("discord.js").RichEmbed;
 
 const ALL_DIRS = {
     menuText: [
@@ -3268,11 +3271,36 @@ let CHAR_IDS = {
     0x3F: "BLANK",
 };
 
-class DR2File {
+class DRFile {
 
     constructor(fileName) {
-        this._basePath = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01";
         this.directory = fileName;
+        this.scenesInfo = [];
+        this._fulldir = ``;
+
+    }
+
+    checkDir() {
+        return fs.lstatSync(this._fulldir).isDirectory();
+    }
+
+}
+
+class DR1File extends DRFile {
+
+    constructor(fileName) {
+        super(fileName);
+        this._basePath = "../../Danganronpa traduction FR/Super_Duper_Script_Editor";
+        this._fulldir = `${this._basePath}/${this.directory}/`;
+    }
+
+}
+
+class DR2File extends DRFile {
+
+    constructor(fileName) {
+        super(fileName);
+        this._basePath = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01";
         this._fulldir = `${this._basePath}/jp/script/${this.directory}/`;
 
         /**
@@ -3283,11 +3311,6 @@ class DR2File {
          * path: infos[4].split(':')[1]
          * @type {Array}
          */
-        this.scenesInfo = [];
-    }
-
-    checkDir() {
-        return fs.lstatSync(this._fulldir).isDirectory();
     }
 
     async _computeAllLine() {
@@ -3309,6 +3332,8 @@ class DR2File {
             line.retrieveContent();
             this.scenesInfo[i].line = line;
         }
+        console.log("Lines computed");
+        return true;
     }
 
     computeScenesInfo() {
@@ -3318,7 +3343,7 @@ class DR2File {
                 ["../SDSE2-Portable/script_pack.py", this.directory, this._basePath]
             );
 
-            console.log(fs.lstatSync("../SDSE2-Portable/script_pack.py").isFile());
+            console.log(`File found : ${fs.lstatSync("../SDSE2-Portable/script_pack.py").isFile()}`);
 
             let index = 0;
             pythonProcess.stdout.on('data', (data) => {
@@ -3328,8 +3353,11 @@ class DR2File {
                         return;
                     }
                     if (line.includes("EOF")) {
+                        console.log("Successfully retrieved data from files");
                         this._computeAllLine().then(() => {
-                            resolve(true);
+                            pythonProcess.kill();
+                            console.log("Scene computation promise resolved");
+                            return resolve(true);
                         }).catch(err => reject(err));
                         return;
                     }
@@ -3359,26 +3387,53 @@ class DR2File {
                     }
                 });
             });
+
+            pythonProcess.stderr.on('data', (data) => {
+                console.info("Python process : " + data);
+            });
+
+            pythonProcess.on('close', (exitCode) => {
+                console.log(`Python process exited with exit code ${exitCode}.\n${this.directory}.`);
+            });
+
         });
     }
 
 }
 
-class DR2Line {
+class DRLine {
 
     constructor(path) {
         this.path = path;
+
         this.data = "";
         this.isTranslated = false;
-
-        this.translatedToken = "<text lang=\"en\">";
-        this.untranslatedToken = "<text lang=\"en\" />";
 
         this.text = {
             french: "",
             english: "",
             japanese: ""
         };
+
+    }
+
+}
+
+class DR1Line extends DRLine {
+
+    constructor(path) {
+        super(path);
+    }
+
+}
+
+class DR2Line extends DRLine {
+
+    constructor(path) {
+        super(path);
+
+        this.translatedToken = "<text lang=\"en\">";
+        this.untranslatedToken = "<text lang=\"en\" />";
 
         this.path = this.path.replace("\r", "");
         return this;
@@ -3408,7 +3463,7 @@ class DR2Line {
 
     writeFile() {
         return new Promise((resolve, reject) => {
-            fs.writeFile(this.path, this.data, function(err) {
+            fs.writeFile(this.path, this.data, "utf16le", function(err) {
                 if(err) {
                     return reject(err);
                 }
@@ -3426,7 +3481,9 @@ class DR2Line {
             return {hasBeenSaved: false, path: this.path};
         }
 
-        let originalData = this.data;
+        let originalData = await this.openFile();
+        this.data = originalData[0];
+        this.retrieveContent();
 
         if (this.isTranslated) {
             this.data = this.data.replace(
@@ -3642,12 +3699,129 @@ let formatContent = (content) => {
     return newContent;
 };
 
+class Terminology {
+    constructor() {
+
+    }
+}
+
+class TerminologySubMenu {
+
+    constructor(channel, user) {
+        this.terminologyPath = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/TerminologyDR2.csv";
+
+        this.channel = channel;
+        this.menu = new Menu(this.channel);
+        this.user = user;
+    }
+
+    destructor() {
+        delete this.terminologyPath;
+        delete this.channel;
+        delete this.menu;
+        delete this.user;
+    }
+
+    launchMenu() {
+        return new Promise((resolve, reject) => {
+            this._computePages().then(() => {
+                return this.menu.printFirstPage();
+            }).then(msg => {
+                let reactionHandler = new ReactionHandler(msg, ["⬅", "➡"]);
+
+                reactionHandler.addReactions().then(() => {
+
+                    reactionHandler.initCollector((reaction) => {
+                        if (reaction.count === 2) {
+
+                            if (reaction.emoji.name === "⬅") {
+                                reaction.remove(this.user).catch(() => true);
+                                this.menu.previousPage().catch(console.error);
+                            } else if (reaction.emoji.name === "➡") {
+                                reaction.remove(this.user).catch(() => true);
+                                this.menu.nextPage().catch(console.error);
+                            } else if (reaction.emoji.name === "🔚") {
+                                reactionHandler.collector.stop();
+                            }
+
+                        }
+                    }, () => {
+                        msg.delete().then(() => {
+                            this.destructor();
+                            return resolve(true);
+                        }).catch(err => reject(err));
+                    })
+
+                }).catch(err => {
+                    console.error(err);
+                    msg.delete().catch(err => reject(err));
+                });
+            }).catch(err => reject(err));
+        });
+    }
+
+    _computePages() {
+        return new Promise((resolve, reject) => {
+            fs.readFile(this.terminologyPath, 'utf8', (err, data) => {
+
+                if (err) {
+                    return reject(err);
+                } else {
+
+                    let terms = new RichEmbed();
+                    let embeds = [];
+
+                    terms.setTitle("Terminologie");
+                    terms.setDescription("Traductions récurrentes pour Danganronpa 2");
+                    terms.setThumbnail("https://vignette.wikia.nocookie.net/danganronpa/images/f/f7/Danganronpa_2_Goodbye_Despair_Box_Art_NISA_PS_Vita_%282014%29.jpg/revision/latest?cb=20140418154650");
+                    terms.setColor(bot_data.bot_values.bot_color);
+
+                    let i = 0;
+                    let trads = data.split('\n').slice(1);
+
+                    let translation_array;
+                    trads.forEach(line => {
+                        translation_array = line.split(',');
+
+                        if (translation_array.length === 3) {
+                            if (i === 25) {
+                                embeds.push(terms);
+                                terms = new RichEmbed()
+                                    .setTitle("Terminologie")
+                                    .setDescription("Traductions récurrentes pour Danganronpa 2")
+                                    .setThumbnail("https://vignette.wikia.nocookie.net/danganronpa/images/f/f7/Danganronpa_2_Goodbye_Despair_Box_Art_NISA_PS_Vita_%282014%29.jpg/revision/latest?cb=20140418154650")
+                                    .setColor(bot_data.bot_values.bot_color);
+                                i = 0;
+                            }
+                            terms.addField(translation_array[1], translation_array[2], true);
+                            i += 1;
+                        }
+
+                    });
+
+                    embeds.push(terms);
+
+                    embeds.forEach((embed, i) => {
+                        embed.setFooter(`Page ${i + 1}/${embeds.length}`);
+                        this.menu.addPage(embed);
+                    });
+
+                    resolve(true);
+                }
+
+            });
+        });
+    }
+
+}
+
 module.exports = {
     CHAR_IDS,
     ALL_DIRS,
     ALL_IMG,
     DR2Line,
     DR2File,
+    TerminologySubMenu,
     formatContent,
     constructDupesDB,
     getDupesOf
