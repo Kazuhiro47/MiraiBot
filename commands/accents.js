@@ -4,10 +4,9 @@ exports.run = (client, message) => {
 
     message.channel.send({
         embed: {
-            color: message.guild.me.displayColor,
             author: {
                 name: `Les accents sur majuscules`,
-                icon_url: message.guild.me.user.avatarURL
+                icon_url: client.user.avatarURL
             },
             fields: [
                 {
