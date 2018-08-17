@@ -180,7 +180,7 @@ class Shifumi {
 	let loserChoice;
 
         if (outcomes[choice1][choice2] === undefined) {
-            this.runGame().catch(console.error);
+            return this.runGame().catch(console.error);
         } else if (outcomes[choice1][choice2]) {
             winner = this.playerOne;
             winnerChoice = choice1;
