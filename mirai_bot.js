@@ -36,6 +36,9 @@ client.trad = new Enmap({provider: tradProvider});
 const gSettings = new EnmapLevel({name: "gSettings"});
 client.gSettings = new Enmap({provider: gSettings});
 
+const LG = new EnmapLevel({name: "LG"});
+client.LG = new Enmap({provider: LG});
+
 let Kazuhiro = undefined;
 
 let translationsStats = client.trad.get("stats");
@@ -63,6 +66,13 @@ client.on('ready', () => {
     //analyseLogChan(new Discord.RichEmbed().setColor(bot_data.bot_values.bot_color).setDescription("~~désolé du fail d'avant~~"), testBotChanMT).catch(console.error);
 });
 
+client.on('error', err => {
+    console.error(err);
+});
+
+client.on('disconnect', event => {
+    console.error(event);
+});
 
 // On message
 client.on('message', message => {

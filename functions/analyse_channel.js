@@ -1,5 +1,7 @@
 const RichEmbed = require("discord.js").RichEmbed;
 const bot_data = require("../bot_data.js").bot_values;
+const botData = require("../bot_data.js");
+const MemberUserXP = require("./parsing_functions.js").MemberUserXP;
 
 let find_user = (client, name) => {
     let usersArray = client.users.array();
@@ -13,6 +15,92 @@ let find_user = (client, name) => {
     return (null)
 };
 
+
+let updateXpWithMessages = (client, channel, args, messages) => {
+    messages.forEach(function (msg_obj) {
+
+        if (!msg_obj.member) {
+            return;
+        }
+
+        if (args.length !== 0) {
+
+            let target = null;
+
+            channel.guild.members.array().forEach(member => {
+
+                if (member.nickname) {
+                    if (member.nickname.toLowerCase().trim().includes(args.join(" ").toLowerCase().trim())) {
+                        target = member;
+                    }
+                }
+                if (member.user.username.toLowerCase().trim().includes(args.join(" ").toLowerCase().trim())) {
+                    target = member;
+                }
+            });
+
+            if (target === null) {
+                return;
+            } else {
+
+                if (target.id !== msg_obj.author.id) {
+                    return;
+                }
+
+            }
+
+        }
+
+        let memberXPData = client.memberXP.get(msg_obj.author.id);
+
+        if (!memberXPData) {
+            client.memberXP.set(msg_obj.author.id, new MemberUserXP(msg_obj.author.id));
+            memberXPData = client.memberXP.get(msg_obj.author.id);
+        }
+
+        let palier_reached = memberXPData.level;
+
+        memberXPData.xp += msg_obj.content.length / 10;
+
+        Object.keys(botData.xp_table).forEach(palier => {
+
+            if (memberXPData.xp > botData.xp_table[palier].xp)
+                palier_reached = palier;
+
+        });
+
+        if (palier_reached > memberXPData.level) {
+            memberXPData.level += 1;
+
+            channel.send(new RichEmbed()
+                .addField(
+                    `**${msg_obj.member.displayName}** est passé à la **Division ${botData.xp_table[memberXPData.level].string}**`,
+                    `*${botData.xp_table[memberXPData.level].description}*`)
+                .setColor(channel.guild.me.displayColor)
+            ).catch(console.error);
+
+            channel.guild.roles.array().forEach(role => {
+
+                if (role.name.split(' ')[1] === botData.xp_table[memberXPData.level].string) {
+                    if (msg_obj.member) {
+                        msg_obj.member.addRole(role).catch(err => {
+                            console.error(err);
+                            channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
+                        });
+                    } else {
+                        channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
+                    }
+                }
+
+            });
+
+        }
+
+        client.memberXP.set(msg_obj.author.id, memberXPData);
+
+    });
+};
+
 /**
  *
  * @param client
@@ -20,19 +108,30 @@ let find_user = (client, name) => {
  * @param check_fct
  * @returns {Promise<any>}
  */
-let getChannelMessages = (client, channel, check_fct) => new Promise((resolve, reject) => {
+let getChannelMessages = (client, channel, args, check_fct) => new Promise((resolve, reject) => {
     if (!channel) {
         reject("Channel not found");
+    }
+
+    if (channel.type === 'category') {
+        return resolve([]);
     }
 
     let runAnalyser = async () => {
         let messages = [];
         let firstMessage = await channel.fetchMessages({limit: 1});
         let messagesFetched = await channel.fetchMessages({limit: 100, before: firstMessage.first().id});
+        let count = 0;
 
         messages = messages.concat(messagesFetched.array());
 
         while (messagesFetched.array().length > 0) {
+
+            updateXpWithMessages(client, channel, args, messagesFetched.array());
+            count += messagesFetched.array().length;
+            if (count % 5000 === 0) {
+                console.log(count + " messages analysés dans " + channel.name);
+            }
 
             if (check_fct && !check_fct(messagesFetched.array())) {
                 break;
@@ -52,10 +151,11 @@ let getChannelMessages = (client, channel, check_fct) => new Promise((resolve, r
             messagesFetched = await channel.fetchMessages({limit: 100, before: messagesFetched.last().id});
         }
 
-        resolve(messages);
+        console.log(channel.name + " channel fully analysed. [" + count + " messages]");
+        return (messages);
     };
 
-    runAnalyser().catch(err => reject(err));
+    runAnalyser().then(messages => resolve(messages)).catch(console.error);
 
 });
 

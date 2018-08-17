@@ -3,6 +3,88 @@ const bot_data = require("../bot_data.js");
 const ReactionHandler = require("./reactionHandler").ReactionHandler;
 const BOT_COLOR = bot_data.bot_values.bot_color;
 
+class Menu {
+
+    constructor(channel, additionnalReactions) {
+        this.index = 0;
+        this.reactionList = ["🔚"];
+        this.pages = [];
+        this.channel = channel;
+        this.reactionHandler = undefined;
+
+        this.currMessage = undefined;
+
+        if (additionnalReactions) {
+            this.reactionList = this.reactionList.concat(additionnalReactions);
+        }
+        console.log("Menu created");
+    }
+
+    addPage(embed) {
+        this.pages.push(embed);
+    }
+
+    resetPages() {
+        this.index = 0;
+        this.pages = this.pages.shift();
+    }
+
+    printFirstPage() {
+        return new Promise((resolve, reject) => {
+            this.index = 0;
+            this.channel.send(this.pages[this.index]).then(msg => {
+
+                this.currMessage = msg;
+                this.reactionHandler = new ReactionHandler(msg, this.reactionList);
+                this.reactionHandler
+                    .addReactions()
+                    .then(() => resolve(msg))
+                    .catch(err => reject(err));
+
+            }).catch(err => reject(err));
+        });
+    }
+
+    nextPage() {
+        return new Promise((resolve, reject) => {
+            if (this.index + 1 === this.pages.length) {
+                this.index = 0;
+            } else {
+                this.index += 1;
+            }
+            this.currMessage.edit(this.pages[this.index]).then(() => resolve(true))
+                .catch(err => reject(err));
+        });
+    }
+
+    jumpToPage(pageIndex) {
+        if (pageIndex < 0 || pageIndex > this.pages.length - 1) {
+            return new Promise((resolve, reject) => resolve(true));
+        }
+        this.index = pageIndex;
+        return this.currMessage.edit(this.pages[this.index]);
+    }
+
+    previousPage() {
+        return new Promise((resolve, reject) => {
+            if (this.index === 0) {
+                this.index = this.pages.length - 1;
+            } else {
+                this.index -= 1;
+            }
+            this.currMessage.edit(this.pages[this.index]).then(() => resolve(true))
+                .catch(err => reject(err));
+        });
+    }
+
+    resetReactionHandler() {
+        if (this.reactionHandler.collector) {
+            this.reactionHandler.collector.stop();
+        }
+        this.reactionHandler = new ReactionHandler(this.currMessage, this.reactionList);
+    }
+}
+
 class MenuChoice {
 
     /**
@@ -170,4 +252,4 @@ class MenuChoice {
 
 }
 
-module.exports = {MenuChoice};
+module.exports = {Menu, MenuChoice};

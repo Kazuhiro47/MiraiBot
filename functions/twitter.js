@@ -34,7 +34,7 @@ let initTwitterListener = (channel, kazuhiro) => {
         });
 
         stream.on('error', function(error) {
-            console.log(error);
+            console.error(error);
         });
     });
 

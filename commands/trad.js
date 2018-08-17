@@ -9,6 +9,7 @@ const get_random_index = require("../functions/parsing_functions").get_random_in
 const write_to_file = require("../functions/write_json").write_to_file;
 const https = require("https");
 const bot_data = require("../bot_data.js");
+const TerminologySubMenu = require("../functions/sdse_utils").TerminologySubMenu;
 
 exports.run = (client, message) => {
 
@@ -67,46 +68,8 @@ exports.run = (client, message) => {
         let cleaned_command = command[1].toLowerCase().trim();
         if (cleaned_command === "récurrente" || cleaned_command.startsWith("rec") || cleaned_command.startsWith("réc")) {
 
-            fs.readFile("../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/TerminologyDR2.csv", 'utf8', (err, data) => {
-
-                if (err) {
-                    console.log(err);
-                } else {
-
-                    let terms = new Discord.RichEmbed();
-
-                    terms.setTitle("Terminologie");
-                    terms.setDescription("Traductions récurrentes pour Danganronpa 2");
-                    terms.setThumbnail("https://vignette.wikia.nocookie.net/danganronpa/images/f/f7/Danganronpa_2_Goodbye_Despair_Box_Art_NISA_PS_Vita_%282014%29.jpg/revision/latest?cb=20140418154650");
-                    terms.setColor(message.guild.me.displayColor);
-
-                    let i = 0;
-                    let trads = data.split('\n').slice(1);
-
-                    let translation_array;
-                    trads.forEach(line => {
-                        translation_array = line.split(',');
-
-                        if (translation_array.length === 3) {
-                            if (i === 25) {
-                                message.channel.send(terms).catch(console.error);
-                                terms = new Discord.RichEmbed()
-                                    .setTitle("Terminologie")
-                                    .setDescription("Traductions récurrentes pour Danganronpa 2")
-                                    .setThumbnail("https://vignette.wikia.nocookie.net/danganronpa/images/f/f7/Danganronpa_2_Goodbye_Despair_Box_Art_NISA_PS_Vita_%282014%29.jpg/revision/latest?cb=20140418154650")
-                                    .setColor(message.guild.me.displayColor);
-                                    i = 0;
-                            }
-                            terms.addField(translation_array[1], translation_array[2], true);
-                            i += 1;
-                        }
-
-                    });
-
-                    message.channel.send(terms);
-                }
-
-            });
+            let terminology = new TerminologySubMenu(message.channel, message.author);
+            terminology.launchMenu().catch(console.error);
 
         }
 

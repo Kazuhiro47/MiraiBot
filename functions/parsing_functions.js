@@ -11,7 +11,9 @@ class MemberUserXP {
 
 }
 
-let check_bad_words = () => new Promise((resolve, reject) => {
+const parsing = false;
+
+let check_bad_words = (message) => new Promise((resolve, reject) => {
 
     let ctnt = message.content.toLowerCase().trim();
 
@@ -19,14 +21,17 @@ let check_bad_words = () => new Promise((resolve, reject) => {
         ctnt = ctnt.replace('*', '');
     }
 
-    const short_bad_words = ['tg', 'pd', "ntm", "fdp", "conne"];
+    const short_bad_words = ['tg', 'pd', "ntm", "fdp", "t'es conne", "pédé", "salope",
+        "ta gueule", "salope", "pute", "connard", "connasse", "gros con", "sale con", "t'es trop con",
+        "va te faire foutre", "t'es con", "fils de pute", "nique ta mère", "enculé", "t'es conne", "suce moi"
+    ];
 
     let lol = false;
 
     short_bad_words.forEach(shortBadWord => {
         if (ctnt.endsWith(" " + shortBadWord) || ctnt.startsWith(shortBadWord + " ")) {
 
-            ctnt = ctnt.replace(shortBadWord, '||');
+            ctnt = ctnt.replace(shortBadWord, "|".repeat(shortBadWord.length));
             lol = true;
         }
     });
@@ -35,20 +40,17 @@ let check_bad_words = () => new Promise((resolve, reject) => {
         return resolve(ctnt);
     }
 
-    if (ctnt === "tg" || ctnt === 'pd') {
-        return resolve("||");
+    if (short_bad_words.includes(ctnt)) {
+        return resolve("|".repeat(short_bad_words[short_bad_words.indexOf(ctnt)].length));
     }
 
-    const bad_words = [
-        "ta gueule", "salope", "pute", " tg ", "connard", "connasse", "gros con", "sale con", "t'es trop con",
-        "va te faire foutre", "t'es con", "fils de pute", "nique ta mère", "pédé ", "enculé", "conne."
-    ];
+    let bad_words = short_bad_words.map(word => ` ${word} `);
 
     let yes = false;
 
     bad_words.forEach(bad_word => {
-        if (ctnt.indexOf(bad_word) !== -1) {
-            ctnt = ctnt.replace(bad_word, '|||||||');
+        while (ctnt.indexOf(bad_word) !== -1) {
+            ctnt = ctnt.replace(bad_word, '|'.repeat(bad_word.length));
             yes = true;
         }
     });
@@ -67,12 +69,29 @@ let sendMsgToModerators = (client, msg) => {
 
     miraiteam.members.array().forEach(member => {
 
-        if (member.roles.find("id", "346226913423130625")) {
+        if (member.roles.find("id", "346226913423130625") && member.id !== "219390405718835200") {
             member.send(msg).catch(console.error);
         }
 
     });
 
+};
+
+let getUserDivision = (xp) => {
+
+    let palier;
+    let i;
+
+    for (i = 10 ; i >= 0 ; i--) {
+
+        palier = bot_data.xp_table[i];
+
+        if (xp > palier.xp) {
+            return {palier: palier, level: i};
+        }
+
+    }
+    return {palier: bot_data.xp_table[0], level: 0};
 };
 
 module.exports = {
@@ -103,14 +122,24 @@ module.exports = {
         }
 
         const exceptChannels = ["danganronpa 1", "danganronpa 2", "discord sdse2", "danganronpa another episode"];
-        if (message.channel.parentID !== "473236555088265266" && message.author.id !== bot_data.bot_values.bot_id) {
+        if (parsing && message.channel.parentID !== "473236555088265266" && message.author.id !== bot_data.bot_values.bot_id) {
 
-            check_bad_words().then(ctnt => {
+            check_bad_words(message).then(ctnt => {
                 message.delete().then(msg => {
 
-                    msg.channel.send(new RichEmbed().setAuthor(msg.member.displayName, msg.author.avatarURL)
+                    let memberXPData = client.memberXP.get(message.author.id);
+                    if (!memberXPData) {
+                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
+                    } else {
+                        memberXPData.xp -= 2000;
+                        client.memberXP.set(message.author.id, memberXPData);
+                    }
+
+                    msg.channel.send(new RichEmbed()
+                        .setAuthor(msg.member.displayName, msg.author.avatarURL)
                         .setColor(msg.member.displayColor)
                         .setDescription(ctnt)
+                        .setFooter("2000 fragments d'espoir ont été perdus. Fragments d'espoir restants : " + memberXPData.xp.toFixed())
                     ).catch(console.error);
 
                     sendMsgToModerators(client, `Insulte détectée\n${message.channel.name} | ${message.author.username} : ${message.content}`);
@@ -125,7 +154,7 @@ module.exports = {
 
     check_xp: (client, message) => {
 
-        if (message.author.id !== bot_data.bot_values.bot_id) {
+        if (message.author.id !== bot_data.bot_values.bot_id && message.member && message.author.bot === false) {
             let memberXPData = client.memberXP.get(message.author.id);
 
             if (!memberXPData) {
@@ -133,18 +162,11 @@ module.exports = {
                 memberXPData = client.memberXP.get(message.author.id);
             }
 
-            let palier_reached = memberXPData.level;
-
             memberXPData.xp += message.content.length / 10;
 
-            Object.keys(bot_data.xp_table).forEach(palier => {
+            let palier_reached = getUserDivision(memberXPData.xp);
 
-                if (memberXPData.xp > bot_data.xp_table[palier].xp)
-                    palier_reached = palier;
-
-            });
-
-            if (palier_reached > memberXPData.level) {
+            if (palier_reached.level > memberXPData.level) {
                 memberXPData.level += 1;
 
                 message.channel.send(new RichEmbed()
@@ -168,6 +190,48 @@ module.exports = {
                     }
 
                 });
+
+            } else if (palier_reached.level < memberXPData.level) {
+                memberXPData.level = palier_reached.level;
+                message.guild.roles.array().forEach(role => {
+
+                    if (role.name.split(' ')[1] === bot_data.xp_table[palier_reached.level].string) {
+                        if (message.member) {
+                            message.member.addRole(role).catch(err => {
+                                console.error(err);
+                                message.channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
+                            });
+                        } else {
+                            message.channel.send("Impossible d'ajouter le rôle correspondant.").catch(console.error);
+                        }
+                    }
+
+                });
+
+                let divisionToRemove = [palier_reached.level + 1];
+                let i = palier_reached.level + 2;
+
+                while (i <= 10) {
+                    divisionToRemove.push(i);
+                    i += 1;
+                }
+
+                divisionToRemove.forEach(levelToRemove => {
+
+                    message.guild.roles.array().forEach(role => {
+
+                        if (role.name.split(' ')[1] === bot_data.xp_table[levelToRemove].string) {
+                            if (message.member) {
+                                message.member.removeRole(role).catch(console.error);
+                            }
+                        }
+
+                    });
+
+                });
+            } else {
+
+
 
             }
 
