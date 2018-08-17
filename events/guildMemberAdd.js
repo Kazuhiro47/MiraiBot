@@ -8,11 +8,13 @@ exports.run = (client, member) => {
     } else {
 
         console.log(`${member.user.username} joined the server.`);
+        if (member.guild.defaultChannel) {
         member.guild.defaultChannel.send(new RichEmbed().setAuthor(member.user.username, member.user.avatarURL)
             .setDescription("Bienvenue à l'Académie du Pic de l'Espoir !")
             .setColor(bot_data.bot_color)
             .setImage(member.user.avatarURL)
         ).catch(console.error);
+        }
 
     }
 
