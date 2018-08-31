@@ -1,25 +1,22 @@
 ---
-description: >-
-  Mirai Bot is a simple Discord bot featuring various functionalities to enhance
-  your Discord experience.
+description: Mirai Bot est un bot Discord simple pour améliorer votre expérience Discord.
 ---
 
-# Mirai Bot \(English\)
+# Mirai Bot
 
-## [Get the bot on your Discord Server](https://discordapp.com/api/oauth2/authorize?client_id=282635213769539584&scope=bot&permissions=1)
+## [ Ajouter le bot Discord sur son serveur](https://discordapp.com/api/oauth2/authorize?client_id=282635213769539584&scope=bot&permissions=1)
 
-## Mirai Bot Commands
+## Commandes du Mirai Bot
 
-| command | what it does |
+| commande | ce que cela fait |
 | :--- | :--- |
-| /lg | launch a game of Loup Garou |
-| /avatar | display your avatar |
-| /shifumi | play shifumi game |
-| /quizz | learn japanese through quizz |
-| /calc | calculate the following maths expression |
-| /pof | toss a coin to have random side |
-| /sondage | initiate a poll |
-| /spoil | spoil tag to hide text from your message |
+| /lg | lancer une partie de Loup Garou |
+| /avatar | afficher votre avatar |
+| /shifumi | jouer au shifumi |
+| /quizz | apprendre le japonais grâce aux quizz |
+| /calc | calculatrice |
+| /pof | pile ou face |
+| /sondage | faire un sondage |
 
 #### 
 
