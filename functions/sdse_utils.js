@@ -3645,7 +3645,7 @@ let formatContent = (content) => {
         return content;
     }
 
-    content = content.replace(/\n/g, "");
+    content = content.replace(/\n/g, " ");
 
     let newContent = "";
 
