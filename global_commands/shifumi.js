@@ -61,9 +61,6 @@ class Shifumi {
             if (rId !== this.id) {
                 this.playerTwo = this.channel.guild.members.find('id', rId);
                 waitPlayer.stop();
-            } else {
-                this.playerTwo = this.channel.guild.members.find('id', rId);
-                waitPlayer.stop();
             }
 
         });

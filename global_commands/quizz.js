@@ -62,7 +62,7 @@ let printXpReward = (message, xpNb) => {
 
 };
 
-exports.run = (client, message) => {
+exports.run = (client, message, args) => {
 
     const parameters = message.content.trim().toLowerCase().split(/ +/g);
     const q = new Quizz();
