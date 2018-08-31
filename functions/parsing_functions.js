@@ -1,5 +1,10 @@
 const bot_data = require("../bot_data");
 const RichEmbed = require("discord.js").RichEmbed;
+const Cleverbot = require('cleverbot');
+
+let cleverbot = new Cleverbot({
+    key: bot_data.bot_values.clever_bot_api_key
+});
 
 class MemberUserXP {
     constructor(id) {
@@ -77,6 +82,14 @@ let sendMsgToModerators = (client, msg) => {
 
 };
 
+let shuffle_array = (a) => {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+};
+
 let getUserDivision = (xp) => {
 
     let palier;
@@ -94,11 +107,60 @@ let getUserDivision = (xp) => {
     return {palier: bot_data.xp_table[0], level: 0};
 };
 
+class CleverBotDisscussion {
+
+    constructor(msg, channel) {
+        this.channel = channel;
+
+
+
+    }
+
+}
+
 module.exports = {
 
-    MemberUserXP, check_bad_words,
+    MemberUserXP, check_bad_words, shuffle_array,
 
     check_message: function (client, message) {
+
+        if (message.mentions) {
+            if (message.mentions.users.get(bot_data.bot_values.bot_id)) {
+
+                let gSettings = client.gSettings.get(message.guild.id);
+
+                if (!gSettings) {
+                    gSettings = bot_data.gSettings;
+                }
+
+                let cleverbotQuery;
+
+                if (!gSettings.cs) {
+                    cleverbotQuery = cleverbot.query(message.cleanContent.replace("@Mirai_Bot", "").trim())
+                } else {
+                    cleverbotQuery = cleverbot.query(message.cleanContent.replace("@Mirai_Bot", "").trim(), {
+                        cs: gSettings.cs
+                    });
+                }
+
+                message.channel.startTyping();
+                cleverbotQuery.then((response) => {
+
+                    gSettings.cs = response.cs;
+                    client.gSettings.set(message.guild.id, gSettings);
+
+                    message.channel.send(response.output).then(() => {
+                        message.channel.stopTyping(true);
+                    }).catch(err => {
+                        message.channel.stopTyping(true);
+                        console.error(err);
+                    });
+                }).catch(err => {
+                    console.error(err);
+                    message.channel.stopTyping(true);
+                });
+            }
+        }
 
         function isUpperCase(str) {
             return str === str.toUpperCase();
@@ -122,27 +184,18 @@ module.exports = {
         }
 
         const exceptChannels = ["danganronpa 1", "danganronpa 2", "discord sdse2", "danganronpa another episode"];
-        if (parsing && message.channel.parentID !== "473236555088265266" && message.author.id !== bot_data.bot_values.bot_id) {
+        if (parsing === true && message.channel.parentID !== "473236555088265266" && message.author.id !== bot_data.bot_values.bot_id) {
 
             check_bad_words(message).then(ctnt => {
                 message.delete().then(msg => {
-
-                    let memberXPData = client.memberXP.get(message.author.id);
-                    if (!memberXPData) {
-                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                    } else {
-                        memberXPData.xp -= 2000;
-                        client.memberXP.set(message.author.id, memberXPData);
-                    }
 
                     msg.channel.send(new RichEmbed()
                         .setAuthor(msg.member.displayName, msg.author.avatarURL)
                         .setColor(msg.member.displayColor)
                         .setDescription(ctnt)
-                        .setFooter("2000 fragments d'espoir ont été perdus. Fragments d'espoir restants : " + memberXPData.xp.toFixed())
                     ).catch(console.error);
 
-                    sendMsgToModerators(client, `Insulte détectée\n${message.channel.name} | ${message.author.username} : ${message.content}`);
+                    //sendMsgToModerators(client, `Insulte détectée\n${message.channel.name} | ${message.author.username} : ${message.content}`);
 
                 }).catch(console.error);
             }).catch(() => {
@@ -239,6 +292,8 @@ module.exports = {
         }
 
     },
+
+
 
     get_random_index: function (array) {
         if (array.length === 1) return (0);

@@ -11,39 +11,67 @@ let updateXpCmd = (client, message, args) => new Promise((resolve, reject) => {
     let channel = client.channels.get("314122440420884480");
     let channels = channel.guild.channels.array();
 
-    let promises = [];
     let messages = [];
 
-    for (let i = 0; i < channels.length; i++) {
-        console.log("Analysing " + channels[i].name);
-        promises.push(getChannelMessages(client, channels[i], args));
+    let computeAll = async () => {
+        for (let i = 0; i < channels.length; i++) {
+            console.log("Analysing " + channels[i].name);
+            messages = messages.concat(await getChannelMessages(client, channel, channels[i], args));
+        }
+        return messages;
+    };
+
+    if (args.length === 0) {
+
+        computeAll().then(() => resolve(true)).catch(err => reject(err));
+
+        /*let promises = [];
+        channels.forEach(chan => {
+            promises.push(getChannelMessages(client, channel, chan, []));
+        });
+
+        Promise.all(promises).then(() => resolve(true)).catch(err => reject(err));*/
+
+    } else if (args[0].startsWith("chan/")) {
+        let channelChoice = message.guild.channels.find('name', args[0].split('/')[1]);
+
+        console.log(args[0].split('/')[1]);
+        if (channelChoice) {
+            getChannelMessages(client, channel, channelChoice, []).then(() => resolve("Analyse terminée")).catch(err => reject(err));
+        } else {
+            reject("Channel not found");
+        }
+    } else if (args[0].startsWith("category/")) {
+        console.log(args.join(' ').split('/')[1]);
+        let categoryChoice = message.guild.channels.find("name", args.join(' ').split('/')[1]);
+
+        if (categoryChoice && categoryChoice.type === "category") {
+
+            let computeCategory = async () => {
+                let chans = client.channels.array();
+                for (let i = 0; i < chans.length; i++) {
+                    if (chans[i].parentID === categoryChoice.id) {
+                        await getChannelMessages(client, channel, chans[i], []);
+                    }
+                }
+            };
+
+            computeCategory().then(() => resolve("Analyse terminée")).catch(err => reject(err));
+
+        } else {
+
+            reject("Category not found");
+        }
+    } else {
+
     }
-
-    Promise.all(promises).then((messagesArrrays) => {
-        messagesArrrays.forEach(array => {
-            messages = messages.concat(array);
-        });
-
-        messages = messages.filter((msg) => {
-            return msg.member && !msg.author.bot
-        });
-
-        channel.send("Update done.").then(() => {
-            resolve("Done");
-        }).catch(err => {
-            console.error(err);
-        });
-
-    }).catch(err => {
-        console.error(err);
-    });
 
 });
 
 exports.run = (client, message, args) => {
 
     updateXpCmd(client, message, args).then((msg) => {
-        console.log(msg);
+        message.channel.send(msg).catch(console.error);
     }).catch(console.error);
 
 };

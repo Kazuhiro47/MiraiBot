@@ -1,6 +1,7 @@
 const RichEmbed = require("discord.js").RichEmbed;
 const bot_data = require("../bot_data.js").bot_values;
 const botData = require("../bot_data.js");
+const Wait = require("./wait").Wait;
 const MemberUserXP = require("./parsing_functions.js").MemberUserXP;
 
 let find_user = (client, name) => {
@@ -19,7 +20,7 @@ let find_user = (client, name) => {
 let updateXpWithMessages = (client, channel, args, messages) => {
     messages.forEach(function (msg_obj) {
 
-        if (!msg_obj.member) {
+        if (!msg_obj.member || msg_obj.author.bot) {
             return;
         }
 
@@ -108,29 +109,59 @@ let updateXpWithMessages = (client, channel, args, messages) => {
  * @param check_fct
  * @returns {Promise<any>}
  */
-let getChannelMessages = (client, channel, args, check_fct) => new Promise((resolve, reject) => {
+let getChannelMessages = (client, logChannel, channel, args, check_fct) => new Promise((resolve, reject) => {
     if (!channel) {
         reject("Channel not found");
     }
 
-    if (channel.type === 'category') {
+    if (channel.type !== 'text') {
         return resolve([]);
     }
 
     let runAnalyser = async () => {
+        let channelSettings = client.gSettings.get(channel.id);
+
+        let firstMessage;
+        if (!channelSettings) {
+            channelSettings = botData.channelSettings;
+            firstMessage = await channel.fetchMessages({limit: 1});
+        } else {
+
+            if (!channelSettings.lastId) {
+                firstMessage = await channel.fetchMessages({limit: 1});
+            } else {
+                firstMessage = await channel.fetchMessages({limit: 1, before: channelSettings.lastId});
+            }
+        }
+
+        if (firstMessage.first()) {
+            let msg = `Premier message analysé dans ${channel.name} : `;
+            if (firstMessage.first().author) msg += `${firstMessage.first().author.username}|`;
+            if (firstMessage.first().createdAt) msg += `${firstMessage.first().createdAt.toUTCString()}|`;
+            msg += `[${firstMessage.first().id}] : ${firstMessage.first().cleanContent}`;
+            logChannel.send(msg).catch(console.error);
+        }
+
         let messages = [];
-        let firstMessage = await channel.fetchMessages({limit: 1});
+
         let messagesFetched = await channel.fetchMessages({limit: 100, before: firstMessage.first().id});
         let count = 0;
+        let time = new Date();
 
         messages = messages.concat(messagesFetched.array());
 
         while (messagesFetched.array().length > 0) {
 
-            updateXpWithMessages(client, channel, args, messagesFetched.array());
+            updateXpWithMessages(client, logChannel, args, messagesFetched.array());
             count += messagesFetched.array().length;
-            if (count % 5000 === 0) {
-                console.log(count + " messages analysés dans " + channel.name);
+            if (count % 2000 === 0) {
+                let timeToWait = ((new Date() - time) / 1000) * 17;
+                if (count % 20000 === 0) {
+                    await logChannel.send(count + " messages analysés dans " + channel.name + ". Attente de 1h.");
+                    await Wait.hours(1);
+                }
+                await logChannel.send(count + " messages analysés dans " + channel.name);
+                time = new Date();
             }
 
             if (check_fct && !check_fct(messagesFetched.array())) {
@@ -148,10 +179,29 @@ let getChannelMessages = (client, channel, args, check_fct) => new Promise((reso
 
             });
 
+            channelSettings = client.gSettings.get(channel.id);
+
+            if (!channelSettings) {
+                channelSettings = botData.channelSettings;
+            }
+
+            channelSettings.lastId = messagesFetched.last().id;
+            client.gSettings.set(channel.id, channelSettings);
+
+            await Wait.seconds(1);
             messagesFetched = await channel.fetchMessages({limit: 100, before: messagesFetched.last().id});
         }
 
-        console.log(channel.name + " channel fully analysed. [" + count + " messages]");
+        channelSettings = client.gSettings.get(channel.id);
+
+        if (!channelSettings) {
+            channelSettings = botData.channelSettings;
+        }
+
+        channelSettings.lastId = undefined;
+        client.gSettings.set(channel.id, channelSettings);
+
+        logChannel.send(channel.name + " channel fully analysed. [" + count + " messages]").catch(console.error);
         return (messages);
     };
 

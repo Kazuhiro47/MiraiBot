@@ -26,6 +26,10 @@ function find_highest(client, mems_xp) {
 
 exports.run = (client, message) => {
 
+    if (message.author.id !== bot_data.bot_values.bot_owners[0]) {
+        return;
+    }
+
     let membersXP = [];
 
     client.users.forEach(user => {
