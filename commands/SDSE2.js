@@ -509,7 +509,6 @@ class Editor {
 
                             guideMsg.delete().catch(console.error);
                             this.msgBuffer.delete().catch(console.error);
-                            translationBufferReaction.collector.stop();
                             this.menu.currMessage.edit(this.menu.pages[this.menu.index]).then(() => {
                                 this.currScenesToSave.push({
                                         line: this.currScenes[this.menu.index].line,
@@ -518,9 +517,11 @@ class Editor {
                                 );
                                 this.currScenesToSave = this.currScenesToSave.unique();
                                 this._initializeFileNavigation();
+                                translationBufferReaction.collector.stop();
                             }).catch(err => {
                                 console.error(err);
                                 this._initializeFileNavigation();
+                                translationBufferReaction.collector.stop();
                             });
                         } else if (reaction.emoji.name === "❌") {
                             this.translationGetter.stop();
