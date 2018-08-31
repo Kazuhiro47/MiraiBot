@@ -3,6 +3,8 @@ const bot_data = require('./bot_data.js');
 const processFcts = require('./functions/check_process.js');
 const client = new Discord.Client();
 
+const typingSpeed = 0.2840909090909091;
+
 // UTC + 2 or UTC + 1
 const UTC_LOCAL_TIMESHIFT = 2;
 
@@ -15,6 +17,7 @@ const EnmapLevel = require('enmap-level');
 
 // file stream import
 const fs = require('graceful-fs');
+const Wait = require("./functions/wait").Wait;
 const initTwitterListener = require("./functions/twitter").initTwitterListener;
 const check_xp = require("./functions/parsing_functions").check_xp;
 const get_random_in_array = require("./functions/parsing_functions").get_random_in_array;
@@ -30,23 +33,16 @@ client.SDSE2Data = new Enmap({provider: SDSE2Provider});
 const userstat = new EnmapLevel({name: 'userstat'});
 client.userstat = new Enmap({provider: userstat});
 
-const tradProvider = new EnmapLevel({name: 'trad'});
-client.trad = new Enmap({provider: tradProvider});
-
 const gSettings = new EnmapLevel({name: "gSettings"});
 client.gSettings = new Enmap({provider: gSettings});
 
 const LG = new EnmapLevel({name: "LG"});
 client.LG = new Enmap({provider: LG});
 
-let Kazuhiro = undefined;
+const moderationData = new EnmapLevel({name: 'moderationData'});
+client.moderationData = new Enmap({provider: moderationData});
 
-let translationsStats = client.trad.get("stats");
-if (!translationsStats) {
-    client.trad.set("stats", {
-        messages: []
-    });
-}
+let Kazuhiro = undefined;
 
 client.on('ready', () => {
     Kazuhiro = client.users.find('id', '140033402681163776');
@@ -61,7 +57,11 @@ client.on('ready', () => {
         }
     }).catch(console.error);
 
-    initTwitterListener(generalChannelMiraiTeam, Kazuhiro);
+    try {
+        initTwitterListener(generalChannelMiraiTeam, Kazuhiro);
+    } catch (e) {
+        console.error(e);
+    }
 
     //analyseLogChan(new Discord.RichEmbed().setColor(bot_data.bot_values.bot_color).setDescription("~~désolé du fail d'avant~~"), testBotChanMT).catch(console.error);
 });
@@ -74,8 +74,14 @@ client.on('disconnect', event => {
     console.error(event);
 });
 
+client.on('resume', (nb) => {
+    console.info(`Connection resumed. Replayed: ${nb}`);
+});
+
 // On message
 client.on('message', message => {
+
+    //console.log(`${message.channel.name} | ${message.author.username} : ${message.cleanContent}`);
 
     check_xp(client, message);
     check_message(client, message);
@@ -93,15 +99,41 @@ client.on('message', message => {
 
     try {
 
-        let commandFile = require(`./commands/${command}.js`);
+        let commandFile = require(`./global_commands/${command}.js`);
 
-        console.log(`${date.getUTCDate()}/${date.getUTCMonth() + 1} ${date.getUTCHours() + UTC_LOCAL_TIMESHIFT}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s | ${message.guild} | ${message.channel.name} | ${message.author.username} : ${message.content}`);
+        console.log(`${date.getUTCDate()}/${date.getUTCMonth() + 1} ${date.getUTCHours() + UTC_LOCAL_TIMESHIFT}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s | ${message.guild} | ${message.channel.name} | ${message.author.username} : ${message.cleanContent}`);
+
+        if (message.guild && message.guild.id === bot_data.mirai_team_gid && message.channel.name !== "bot_room" && message.member && !message.member.hasPermission('BAN_MEMBERS')) {
+            message.member.send("Le bot n'est utilisable que dans le channel #bot_room\nton message : " + message.cleanContent).catch(console.error);
+            message.delete().catch(console.error);
+            return;
+        }
 
         commandFile.run(client, message, args);
 
     } catch (err) {
         if (err.code !== "MODULE_NOT_FOUND") {
             console.error(err);
+        } else if (message.guild && message.guild.id === bot_data.mirai_team_gid) {
+            try {
+
+                let commandFile = require(`./commands/${command}.js`);
+
+                console.log(`${date.getUTCDate()}/${date.getUTCMonth() + 1} ${date.getUTCHours() + UTC_LOCAL_TIMESHIFT}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s | ${message.guild} | ${message.channel.name} | ${message.author.username} : ${message.cleanContent}`);
+
+                if (command !== "sdse2" && message.channel.name !== "bot_room" && message.member && !message.member.hasPermission('BAN_MEMBERS')) {
+                    message.member.send("Le bot n'est utilisable que dans le channel #bot_room\nton message : " + message.cleanContent).catch(console.error);
+                    message.delete().catch(console.error);
+                    return;
+                }
+
+                commandFile.run(client, message, args);
+
+            } catch (err) {
+                if (err.code !== "MODULE_NOT_FOUND") {
+                    console.error(err);
+                }
+            }
         }
     }
 
@@ -297,6 +329,19 @@ function set_evening_interval() {
             ).setImage(get_random_in_array(monokumaImgs));
 
         generalChannelMiraiTeam.send(evening_message).catch(console.error);
+
+        generalChannelMiraiTeam.startTyping();
+        Wait.minutes(12)
+            .then(() => Wait.seconds(typingSpeed * "Utilisons le gacha !!".length))
+            .then(() => generalChannelMiraiTeam.send("Utilisons le gacha !!"))
+            .then(() => {generalChannelMiraiTeam.stopTyping(); return Wait.seconds(1)})
+            .then(() => {generalChannelMiraiTeam.startTyping(); return Wait.seconds(typingSpeed * "<gacha daily".length)})
+            .then(() => generalChannelMiraiTeam.send("<gacha daily"))
+            .then(() => Wait.seconds(3))
+            .then(() => generalChannelMiraiTeam.send("Nice"))
+            .then(() => {generalChannelMiraiTeam.stopTyping(); return Wait.seconds(1)})
+            .catch(console.error);
+
         //analyseLogChan(evening_message, generalChannelMiraiTeam).catch(console.error);
 
     }, 60000 * 60 * 24);
