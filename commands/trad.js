@@ -311,7 +311,9 @@ exports.run = (client, message) => {
 
         if (cleaned_command === 'stat') {
 
-            analyseLogChan(client, message.channel).catch(console.error);
+            if (message.author.id === bot_data.bot_values.bot_owners[0]) {
+                analyseLogChan(client, message.channel).catch(console.error);
+            }
 
         }
 

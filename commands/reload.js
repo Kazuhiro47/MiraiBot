@@ -12,7 +12,7 @@ exports.run = (client, message, args) => {
         message.reply(`la commande ${args[0]} a été rechargée.`).catch(console.error);
     } else if (fs.existsSync(`./global_commands/${args[0]}.js`)) {
         delete require.cache[require.resolve(`../global_commands/${args[0]}.js`)];
-        message.reply(`la commande ${args[0]} a été rechargée.`).catch(console.error);
+        message.reply(`la commande globale ${args[0]} a été rechargée.`).catch(console.error);
     } else {
         message.reply("Commande introuvable").catch(console.error);
     }

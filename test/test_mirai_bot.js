@@ -26,7 +26,7 @@ client.on("message", (message) => {
         const args = message.content.slice(1).trim().split(/ +/g);
         args.shift();
 
-        let commandFile = require(`../global_commands/translate.js`);
+        let commandFile = require(`../global_commands/jisho.js`);
 
         commandFile.run(client, message, args);
     }

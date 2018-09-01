@@ -60,6 +60,26 @@ const ALL_DIRS = {
         "49_Novel.pak",
     ],
     prologue: [
+        "e00_001_180.lin",
+        "e00_001_001.lin",
+        "e00_002_001.lin",
+        "e00_003_019.lin",
+        "e00_003_001.lin",
+        "e00_003_002.lin",
+        "e00_003_003.lin",
+        "e00_003_004.lin",
+        "e00_003_100.lin",
+        "e00_003_101.lin",
+        "e00_003_102.lin",
+        "e00_003_142.lin",
+        "e00_999_000.lin",
+        "e00_999_023.lin",
+        "e00_005_001.lin",
+        "e00_006_001.lin",
+        "e00_006_100.lin",
+        "e00_006_142.lin",
+        "e00_007_142.lin",
+        "e00_007_143.lin",
         "e00_000_001.lin",
         "e00_000_002.lin",
         "e00_000_003.lin",
@@ -72,25 +92,6 @@ const ALL_DIRS = {
         "e00_000_144.lin",
         "e00_000_145.lin",
         "e00_000_180.lin",
-        "e00_001_001.lin",
-        "e00_001_180.lin",
-        "e00_002_001.lin",
-        "e00_003_001.lin",
-        "e00_003_002.lin",
-        "e00_003_003.lin",
-        "e00_003_004.lin",
-        "e00_003_019.lin",
-        "e00_003_100.lin",
-        "e00_003_101.lin",
-        "e00_003_102.lin",
-        "e00_003_142.lin",
-        "e00_005_001.lin",
-        "e00_006_001.lin",
-        "e00_006_100.lin",
-        "e00_006_142.lin",
-        "e00_007_142.lin",
-        "e00_007_143.lin",
-        "e00_999_000.lin",
         "e00_999_001.lin",
         "e00_999_002.lin",
         "e00_999_003.lin",
@@ -108,8 +109,39 @@ const ALL_DIRS = {
         "e00_999_020.lin",
         "e00_999_021.lin",
         "e00_999_022.lin",
-        "e00_999_023.lin",
         "e00_999_024.lin",
+        "script_pak_e00_001.lin",
+        "script_pak_e00_002.lin",
+        "script_pak_e00_003.lin",
+        "script_pak_e00_004.lin",
+        "script_pak_e00_006.lin",
+        "script_pak_e00_007.lin",
+        "script_pak_e00_008.lin",
+        "script_pak_e00_011.lin",
+        "script_pak_e00_012.lin",
+        "script_pak_e00_013.lin",
+        "script_pak_e00_014.lin",
+        "script_pak_e00_015.lin",
+        "script_pak_e00_016.lin",
+        "script_pak_e00_017.lin",
+        "script_pak_e00_018.lin",
+        "script_pak_e00_019.lin",
+        "script_pak_e00_020.lin",
+        "script_pak_e00_021.lin",
+        "script_pak_e00_022.lin",
+        "script_pak_e00_023.lin",
+        "script_pak_e00_024.lin",
+        "script_pak_e00_025.lin",
+        "script_pak_e00_026.lin",
+        "script_pak_e00_027.lin",
+        "script_pak_e00_028.lin",
+        "script_pak_e00_029.lin",
+        "script_pak_e00_030.lin",
+        "script_pak_e00_031.lin",
+        "script_pak_e00_032.lin",
+        "script_pak_e00_033.lin",
+        "script_pak_e00_034.lin",
+        "script_pak_e00_035.lin",
     ],
     chapitre1: [
         "e01_000_001.lin",
@@ -3701,6 +3733,25 @@ let formatContent = (content) => {
 
 class Terminology {
     constructor() {
+
+    }
+}
+
+class BasicMenu {
+    constructor(channel) {
+        this.channel = channel;
+        this.menu = new Menu(this.channel);
+    }
+
+    addEmbed(embed) {
+        this.menu.addPage(embed);
+    }
+
+    addBasicNavigation() {
+
+    }
+
+    print() {
 
     }
 }

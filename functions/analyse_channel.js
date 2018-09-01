@@ -157,8 +157,8 @@ let getChannelMessages = (client, logChannel, channel, args, check_fct) => new P
             if (count % 2000 === 0) {
                 let timeToWait = ((new Date() - time) / 1000) * 17;
                 if (count % 20000 === 0) {
-                    await logChannel.send(count + " messages analysés dans " + channel.name + ". Attente de 1h.");
-                    await Wait.hours(1);
+                    //await logChannel.send(count + " messages analysés dans " + channel.name + ". Attente de 1h.");
+                    //await Wait.hours(1);
                 }
                 await logChannel.send(count + " messages analysés dans " + channel.name);
                 time = new Date();
@@ -228,24 +228,29 @@ let analyseLogChan = async (client, channel) => {
                 msg.createdAt.getMonth() === now.getMonth());*/
         };
 
+        let unknownUsers = {};
+
         // check first message
         if (checkIfMsgIsToday(firstMessage.first())) {
 
-            const messageContentArray = firstMessage.first().content.split(/ +/g);
-            let user = find_user(client, messageContentArray[0].slice(0, messageContentArray[0].length - 2));
+            const username = firstMessage.first().content.split("modified")[0].trim();
+            const messageContentArray = firstMessage.first().content.split("modified")[1].split(/ +/g);
+            let user = find_user(client, username);
 
             if (!user) {
                 let Kazuhiro = client.users.find('id', '140033402681163776');
 
-                Kazuhiro.send(`L'utilisateur ${messageContentArray[0]} est introuvable`).catch(console.error);
+                Kazuhiro.send(`L'utilisateur ${username} est introuvable`).catch(console.error);
+                unknownUsers[username] = true;
+
             } else {
 
                 if (!(user.id in stats)) {
                     stats[user.id] = 0;
                 }
 
-                if (messageContentArray.length === 7) {
-                    stats[user.id] += 1 + parseInt(messageContentArray[4]);
+                if (firstMessage.first().content.split("modified")[1].indexOf("other") !== -1) {
+                    stats[user.id] += 1 + parseInt(messageContentArray[messageContentArray.length - 3]);
                 } else {
                     stats[user.id] += 1;
                 }
@@ -277,25 +282,32 @@ let analyseLogChan = async (client, channel) => {
 
                 if (checkIfMsgIsToday(msgFetched)) {
 
-                    const messageContentArray = msgFetched.content.split(/ +/g);
-                    let user = find_user(client, messageContentArray[0].slice(0, messageContentArray[0].length - 2));
+                    let username = msgFetched.content.split("modified")[0].trim();
+
+                    if (username === "AinnCali") username = 'Ainn Zoray';
+
+                    const messageContentArray = msgFetched.content.split("modified")[1].split(/ +/g);
+                    let user = find_user(client, username);
 
                     if (!user) {
-                        let Kazuhiro = client.users.find('id', '140033402681163776');
 
-                        Kazuhiro.send(`L'utilisateur ${messageContentArray[0]} est introuvable`).catch(console.error);
+                        if (!unknownUsers[username]) {
+
+                            let Kazuhiro = client.users.find('id', '140033402681163776');
+
+                            Kazuhiro.send(`L'utilisateur ${username} est introuvable`).catch(console.error);
+                            unknownUsers[username] = true;
+
+                        }
+
                     } else {
 
                         if (!(user.id in stats)) {
                             stats[user.id] = 0;
                         }
 
-                        if (messageContentArray.length === 7) {
-                            if (parseInt(messageContentArray[4]) < 1000) {
-                                stats[user.id] += 1 + parseInt(messageContentArray[4]);
-                            } else {
-                                stats[user.id] += 1;
-                            }
+                        if (msgFetched.content.split("modified")[1].indexOf("other") !== -1) {
+                            stats[user.id] += 1 + parseInt(messageContentArray[messageContentArray.length - 3]);
                         } else {
                             stats[user.id] += 1;
                         }
