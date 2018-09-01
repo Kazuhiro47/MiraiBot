@@ -17,6 +17,8 @@ description: Mirai Bot est un bot Discord simple pour améliorer votre expérien
 | /calc | calculatrice |
 | /pof | pile ou face |
 | /sondage | faire un sondage |
+| /translate | traduit une phrase écrite en langue étrangère en français |
+| /jisho | traduit du texte japonais en anglais |
 
 #### 
 
