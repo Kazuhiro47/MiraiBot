@@ -379,11 +379,12 @@ class SondageInfiniteChoice {
 
 class Referendum {
 
-    constructor(question, discordClient, referendumAuthor) {
+    constructor(question, discordClient, referendumAuthor, time) {
         this.question = question;
         this.client = discordClient;
         this.author = referendumAuthor;
         this.referendumChannel = this.client.channels.get(referendumChannelId);
+        this.time = time;
     }
 
     channelExists() {
@@ -396,7 +397,7 @@ class Referendum {
                 [this.question, "Oui", "Non"],
                 this.client,
                 this.referendumChannel,
-                4000//60000 * 60 * 48
+                this.time
             );
 
             referendum.post().then(() => {
