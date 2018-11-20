@@ -121,7 +121,7 @@ class Quizz {
             .setAuthor(`Question ${this.questionNb}/${this.totalQuestions}`, 'https://wallpapers.wallhaven.cc/wallpapers/full/wallhaven-167911.jpg')
             .setTitle(`Quizz ${this.quizzType} niveau ${this.level}`)
             .setColor(bot_data.bot_values.bot_color)
-            .addField(`**${this.workingData[key]}**`, "Quelle est la " + va + " de ce " + vb + " ?")
+            .addField(`${this.workingData[key]}`, "Quelle est la " + va + " de ce " + vb + " ?")
             .setDescription('Tape stop pour arrêter le quizz'))
             .then(msg => {
                 this.messageList.push(msg);
