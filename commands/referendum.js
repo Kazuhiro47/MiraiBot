@@ -18,7 +18,7 @@ exports.run = (client, message, args) => {
 
                 if (question.startsWith("Souhaitez-vous")) {
 
-                    let referendum = new Referendum(question, client, message.member);
+                    let referendum = new Referendum(question, client, message.member, 60000 * 60 * 48);
 
                     if (!referendum.channelExists()) {
                         message.channel.send("Erreur : le salon de publication pour le référendum n'existe pas").catch(console.error);

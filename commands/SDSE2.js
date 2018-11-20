@@ -3,9 +3,12 @@ const RichEmbed = require("discord.js").RichEmbed;
 const ALL_DIRS = require("../functions/sdse_utils.js").ALL_DIRS;
 const SDSE2 = require("../functions/sdse_utils.js");
 const fs = require("fs");
+const jishoQueryMenu = require("../functions/jisho").jishoQueryMenu;
 const ReactionHandler = require("../functions/reactionHandler.js").ReactionHandler;
 const MenuChoice = require("../functions/menu.js").MenuChoice;
 const Menu = require("../functions/menu.js").Menu;
+const jishoApi = require("unofficial-jisho-api");
+const jisho = new jishoApi();
 
 Number.prototype.pad = function (size) {
     let s = String(this);
@@ -24,6 +27,7 @@ class Editor {
     constructor(message, client) {
 
         this.logChannel = client.guilds.get("168673025460273152").channels.find("id", "452118364161048576");
+        this.kazuhiro = client.users.get("140033402681163776");
 
         this.totalFilesModified = 0;
         this.timeUsed = new Date();
@@ -40,6 +44,7 @@ class Editor {
         this.menu = new Menu();
         this.embed = null;
         this.logMessage = null;
+        this.logMessage2 = null;
         this.partList = [];
 
         this.currScenes = [];
@@ -66,7 +71,7 @@ class Editor {
                 "*Veuillez choisir une partie à traduire*\n\n" +
                 "Utilisez les réaction ⬇ et ⬆ pour choisir, puis 🆗 pour valider votre sélection"
             )
-            .setFooter("Page 1/1 - Made by Kazuhiro");
+            .setFooter("Made by Kazuhiro", this.kazuhiro.avatarURL);
 
         Object.keys(this.SDSE_ALL_DIRS).forEach(part => {
             if (part === "FTE") {
@@ -97,7 +102,7 @@ class Editor {
 
             if (reaction.count === 2) {
                 if (reaction.emoji.name === "🔚") {
-                    reaction.remove(this.translator).catch(() => true);
+                    reaction.remove(reaction.users.last()).catch(() => true);
                     this.quitEditor();
                 }
             }
@@ -162,7 +167,7 @@ class Editor {
                 if (reaction.count === 2) {
 
                     if (reaction.emoji.name === "🈁") {
-                        reaction.remove(this.translator).catch(() => true);
+                        reaction.remove(reaction.users.last()).catch(() => true);
                         this.fileChoice.reactionHandler.collector.stop();
                         this._jump().then(() => {
                             this._getFileChoice().then(fileChoice => {
@@ -171,7 +176,7 @@ class Editor {
                         }).catch(console.error);
                     }
                     if (reaction.emoji.name === "⬅") {
-                        reaction.remove(this.translator).catch(() => true);
+                        reaction.remove(reaction.users.last()).catch(() => true);
                         this.fileChoice.reactionHandler.collector.stop();
                         this.menu.previousPage().then(() => {
                             this._getFileChoice().then(fileChoice => {
@@ -180,7 +185,7 @@ class Editor {
                         }).catch(console.error);
                     }
                     if (reaction.emoji.name === "➡") {
-                        reaction.remove(this.translator).catch(() => true);
+                        reaction.remove(reaction.users.last()).catch(() => true);
                         this.fileChoice.reactionHandler.collector.stop();
                         this.menu.nextPage().then(() => {
                             this._getFileChoice().then(fileChoice => {
@@ -189,7 +194,7 @@ class Editor {
                         }).catch(() => true);
                     }
                     if (reaction.emoji.name === "🔙") {
-                        reaction.remove(this.translator).catch(() => true);
+                        reaction.remove(reaction.users.last()).catch(() => true);
                         this.fileChoice.reactionHandler.collector.stop();
                         this._returnToMainMenu();
                     }
@@ -232,50 +237,7 @@ class Editor {
     }
 
     _getEmbedList() {
-        let embedList = [];
-        this.embed = new RichEmbed().setColor(bot_data.bot_values.bot_color)
-            .setTitle("SDSE2-In-Discord")
-            .setDescription(
-                "*Veuillez choisir un fichier à traduire*\n\n" +
-                "Utilisez les réaction ⬇ et ⬆ pour choisir, puis 🆗 pour valider votre sélection\n" +
-                "Utilisez les réactions ⬅ et ➡ pour changer de page"
-            );
-
-        this.menu.pages = [];
-        let keys = Object.keys(ALL_DIRS);
-        this.partChosen = keys[this.partChoice];
-        let choice = ALL_DIRS[this.partChosen];
-
-        let limit = 0;
-        choice.forEach(file => {
-
-            if (limit === 9) {
-                embedList.push(this.embed);
-                this.embed = new RichEmbed().setColor(bot_data.bot_values.bot_color)
-                    .setTitle("SDSE2-In-Discord")
-                    .setDescription(
-                        "*Veuillez choisir un fichier à traduire*\n\n" +
-                        "Utilisez les réaction ⬇ et ⬆ pour choisir, puis 🆗 pour valider votre sélection\n" +
-                        "Utilisez les réactions ⬅ et ➡ pour changer de page et 🔙 pour revenir au menu principal"
-                    );
-                limit = 0;
-            }
-
-            //todo: add file stat
-            this.embed.addField(
-                file, "test", true
-            );
-            limit += 1;
-
-        });
-
-        embedList.push(this.embed);
-        embedList.forEach((embed, i) => {
-            embedList[i].setFooter(`Page ${i + 1}/${embedList.length}`);
-            this.menu.addPage(embed);
-        });
-        this.embed = embedList[0];
-        return embedList;
+        return [];
     }
 
     async _printFileChoice() {
@@ -295,7 +257,8 @@ class Editor {
                 "Utilisez la réaction 📝 pour modifier la ligne actuelle\n" +
                 `💾 sauvegarde les lignes du fichier actuel (${this.currentFileName} en l'occurrence), **N'OUBLIEZ PAS DE LE FAIRE**\n` +
                 "🈁 jump à une ligne précise\n" +
-                "🈳 récupère le texte japonais\n" +
+                "🈳 cherche la traduction jisho japonaise\n" +
+                "🈺 récupère le texte japonais\n" +
                 "📘 ouvre le sous-menu des traductions récurrentes\n"
             );
     }
@@ -388,7 +351,7 @@ class Editor {
         this.menu.currMessage.edit(this.menu.pages[this.menu.index]).catch(console.error);
         this.menu.reactionHandler.removeReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
         this.menu.resetReactionHandler();
-        this.menu.reactionHandler.addReactionList(["⬅", "➡", "📝", "💾", "🈁", "🈳", "📘"]).catch(console.error);
+        this.menu.reactionHandler.addReactionList(["⬅", "➡", "📝", "💾", "🈁", "🈳", "🈺", "📘"]).catch(console.error);
         this.menu.reactionHandler.initCollector(
             (reaction) => {
                 if (reaction.count === 2) {
@@ -396,33 +359,45 @@ class Editor {
                     //todo: Reload function
 
                     if (reaction.emoji.name === "📝") {
-                        reaction.remove(this.translator).catch(() => true);
-                        this.menu.reactionHandler.removeReactionList(["⬅", "➡", "💾", "🈁", "🈳", "📘"]).catch(console.error);
+                        reaction.remove(reaction.users.last()).catch(() => true);
+                        this.menu.reactionHandler.removeReactionList(["⬅", "➡", "🈁"]).catch(console.error);
                         this.menu.resetReactionHandler();
                         this._initializeLineEditor();
+                    } else if (reaction.emoji.name === "🈁") {
+                        reaction.remove(reaction.users.last()).catch(() => true);
+                        this._jump().catch(console.error);
                     } else if (reaction.emoji.name === "💾") {
                         this._saveAll().then(() => {
-                            reaction.remove(this.translator).catch(() => true);
+                            reaction.remove(reaction.users.last()).catch(() => true);
                         }).catch(console.error);
-                    } else if (reaction.emoji.name === "🈁") {
-                        reaction.remove(this.translator).catch(() => true);
-                        this._jump().catch(console.error);
                     } else if (reaction.emoji.name === "🈳") {
-                        reaction.remove(this.translator).catch(() => true);
-                        if (this.logMessage.content.indexOf(this.menu.pages[this.menu.index].fields[2].value) === -1) {
-                            this.logMessage.edit(`${this.menu.pages[this.menu.index].fields[2].value}\n${this.logMessage.content}`).catch(console.error);
-                        }
+
+                        reaction.remove(reaction.users.last()).catch(() => true);
+                        jishoQueryMenu(
+                            this.client,
+                            this.message,
+                            this.menu.pages[this.menu.index].fields[2].value
+                                .replace(/<CLT \d\d>+/g, "")
+                                .replace(/<CLT>+/g, ""),
+                            jisho
+                        ).catch(console.error);
+
+                    } else if (reaction.emoji.name === '🈺') {
+
+                    	reaction.remove(reaction.users.last()).catch(() => true);
+                        this.logMessage2.edit(`${this.menu.pages[this.menu.index].fields[2].value}`).catch(console.error);
+
                     } else if (reaction.emoji.name === "📘") {
-                        reaction.remove(this.translator).catch(() => true);
+                        reaction.remove(reaction.users.last()).catch(() => true);
                         let terminology = new SDSE2.TerminologySubMenu(this.channel, this.translator);
                         terminology.launchMenu().catch(console.error);
                     } else if (reaction.emoji.name === "⬅") {
-                        reaction.remove(this.translator).catch(() => true);
+                        reaction.remove(reaction.users.last()).catch(() => true);
                         this.logMessage.edit(initialLogMessageContent).catch(console.error);
                         this.menu.previousPage().then(() => {
                         }).catch(console.error);
                     } else if (reaction.emoji.name === "➡") {
-                        reaction.remove(this.translator).catch(() => true);
+                        reaction.remove(reaction.users.last()).catch(() => true);
                         this.logMessage.edit(initialLogMessageContent).catch(console.error);
                         this.menu.nextPage().then(() => {
                         }).catch(() => true);
@@ -447,9 +422,9 @@ class Editor {
                                     }
                                 }, () => {
                                     msg.delete().catch(console.error);
-                                    reaction.remove(this.translator).catch(() => true);
+                                    reaction.remove(reaction.users.last()).catch(() => true);
                                     this.fileChoice.reactionHandler.collector.stop();
-                                    this.menu.reactionHandler.removeReactionList(["💾", "📝", "🈁", "🈳"]).catch(console.error);
+                                    this.menu.reactionHandler.removeReactionList(["💾", "📝", "🈁", "🈳", "🈺"]).catch(console.error);
                                     this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
                                     this.menu.resetPages();
                                     this.menu.resetReactionHandler();
@@ -459,9 +434,9 @@ class Editor {
                                 });
                             }).catch(console.error);
                         } else {
-                            reaction.remove(this.translator).catch(() => true);
+                            reaction.remove(reaction.users.last()).catch(() => true);
                             this.fileChoice.reactionHandler.collector.stop();
-                            this.menu.reactionHandler.removeReactionList(["💾", "📝", "🈁", "🈳"]).catch(console.error);
+                            this.menu.reactionHandler.removeReactionList(["💾", "📝", "🈁", "🈳", "🈺"]).catch(console.error);
                             this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
                             this.menu.resetPages();
                             this.menu.resetReactionHandler();
@@ -503,12 +478,9 @@ class Editor {
                 translationBufferReaction.initCollector((reaction) => {
                     if (reaction.count === 2) {
                         if (reaction.emoji.name === "✅") {
-                            this.translationGetter.stop();
                             this.menu.pages[this.menu.index].fields[0].value = this.msgBuffer.content.slice(3, this.msgBuffer.content.length - 3);
                             this._updateFileDupes();
 
-                            guideMsg.delete().catch(console.error);
-                            this.msgBuffer.delete().catch(console.error);
                             this.menu.currMessage.edit(this.menu.pages[this.menu.index]).then(() => {
                                 this.currScenesToSave.push({
                                         line: this.currScenes[this.menu.index].line,
@@ -523,16 +495,16 @@ class Editor {
                                 this._initializeFileNavigation();
                                 translationBufferReaction.collector.stop();
                             });
+
                         } else if (reaction.emoji.name === "❌") {
-                            this.translationGetter.stop();
-                            guideMsg.delete().catch(console.error);
-                            this.msgBuffer.delete().catch(console.error);
-                            translationBufferReaction.collector.stop();
                             this._initializeFileNavigation();
+                            translationBufferReaction.collector.stop();
                         }
                     }
                 }, () => {
-
+                    this.translationGetter.stop();
+                    guideMsg.delete().catch(console.error);
+                    this.msgBuffer.delete().catch(console.error);
                 });
 
                 this.menu.reactionHandler.initCollector((reaction) => {
@@ -563,7 +535,7 @@ class Editor {
                                         }
                                     }, () => {
                                         msg.delete().catch(console.error);
-                                        reaction.remove(this.translator).catch(() => true);
+                                        reaction.remove(reaction.users.last()).catch(() => true);
                                         this.fileChoice.reactionHandler.collector.stop();
                                         this.menu.reactionHandler.removeReactionList(["📝", "💾"]).catch(console.error);
                                         this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
@@ -575,7 +547,7 @@ class Editor {
                                     });
                                 }).catch(console.error);
                             } else {
-                                reaction.remove(this.translator).catch(() => true);
+                                reaction.remove(reaction.users.last()).catch(() => true);
                                 this.fileChoice.reactionHandler.collector.stop();
                                 this.menu.reactionHandler.removeReactionList(["📝", "💾"]).catch(console.error);
                                 this.menu.reactionHandler.addReactionList(["⬇", "⬆", "🆗"]).catch(console.error);
@@ -585,6 +557,26 @@ class Editor {
                                     this._launchFileBrowser();
                                 }).catch(console.error);
                             }
+                        } else if (reaction.emoji.name === "💾") {
+                            this._saveAll().then(() => {
+                                reaction.remove(reaction.users.last()).catch(() => true);
+                            }).catch(console.error);
+                        } else if (reaction.emoji.name === "🈳") {
+
+                            reaction.remove(reaction.users.last()).catch(() => true);
+                            jishoQueryMenu(
+                                this.client,
+                                this.message,
+                                this.menu.pages[this.menu.index].fields[2].value
+                                    .replace(/<CLT \d\d>+/g, "")
+                                    .replace(/<CLT>+/g, ""),
+                                jisho
+                            ).catch(console.error);
+
+                        } else if (reaction.emoji.name === "📘") {
+                            reaction.remove(reaction.users.last()).catch(() => true);
+                            let terminology = new SDSE2.TerminologySubMenu(this.channel, this.translator);
+                            terminology.launchMenu().catch(console.error);
                         }
 
                     }
@@ -698,6 +690,7 @@ class Editor {
 
         this.menu.currMessage.delete().catch(console.error);
         this.logMessage.delete().catch(console.error);
+        this.logMessage2.delete().catch(console.error);
 
         this.gSettings = this.client.gSettings.get(this.message.guild.id);
         this.gSettings.sdse2.splice(this.gSettings.sdse2.indexOf(this.channel.id), 1);
@@ -714,6 +707,27 @@ class Editor {
             `Durée d'utilisation : ${timeUsed}\n` +
             `Fichiers modifiés : ${this.totalFilesModified}, soit ${(this.totalFilesModified / this.totalFilesNumber * 100).toFixed(3)}% de la traduction totale.`
         ).catch(console.error);
+    }
+
+}
+
+class SDSE1Editor extends Editor {
+
+    constructor(message, client) {
+
+        super(message, client);
+
+        this.editorName = "SDSE1";
+        this.SDSE_ALL_DIRS = ALL_DIRS_DR1;
+
+        this.gSettings = client.gSettings.get(message.guild.id);
+        if (!this.gSettings) {
+            client.gSettings.set(message.guild.id, bot_data.gSettings);
+            this.gSettings = bot_data.gSettings;
+        }
+        this.gSettings.sdse1.push(message.channel.id);
+        client.gSettings.set(message.guild.id, this.gSettings);
+
     }
 
 }
@@ -744,6 +758,8 @@ class SDSE2Editor extends Editor {
             this.logmsginit += "Le sdse est lancé en mp, les réactions seront donc à enlever manuellement.";
         this.channel.send(this.logmsginit).then(msg => {
             this.logMessage = msg;
+        }).then(() => this.channel.send("*JP TXT LOG*")).then(msg => {
+        	this.logMessage2 = msg;
         }).catch(this.quitEditor);
 
         SDSE2.constructDupesDB().then(dupeDB => {
@@ -751,6 +767,53 @@ class SDSE2Editor extends Editor {
         }).catch(console.error);
 
         return this;
+    }
+
+    _getEmbedList() {
+        let embedList = [];
+        this.embed = new RichEmbed().setColor(bot_data.bot_values.bot_color)
+            .setTitle("SDSE2-In-Discord")
+            .setDescription(
+                "*Veuillez choisir un fichier à traduire*\n\n" +
+                "Utilisez les réaction ⬇ et ⬆ pour choisir, puis 🆗 pour valider votre sélection\n" +
+                "Utilisez les réactions ⬅ et ➡ pour changer de page"
+            );
+
+        this.menu.pages = [];
+        let keys = Object.keys(ALL_DIRS);
+        this.partChosen = keys[this.partChoice];
+        let choice = ALL_DIRS[this.partChosen];
+
+        let limit = 0;
+        choice.forEach(file => {
+
+            if (limit === 9) {
+                embedList.push(this.embed);
+                this.embed = new RichEmbed().setColor(bot_data.bot_values.bot_color)
+                    .setTitle("SDSE2-In-Discord")
+                    .setDescription(
+                        "*Veuillez choisir un fichier à traduire*\n\n" +
+                        "Utilisez les réaction ⬇ et ⬆ pour choisir, puis 🆗 pour valider votre sélection\n" +
+                        "Utilisez les réactions ⬅ et ➡ pour changer de page et 🔙 pour revenir au menu principal"
+                    );
+                limit = 0;
+            }
+
+            //todo: add file stat
+            this.embed.addField(
+                file, "test", true
+            );
+            limit += 1;
+
+        });
+
+        embedList.push(this.embed);
+        embedList.forEach((embed, i) => {
+            embedList[i].setFooter(`Page ${i + 1}/${embedList.length}`);
+            this.menu.addPage(embed);
+        });
+        this.embed = embedList[0];
+        return embedList;
     }
 
     quitEditor() {

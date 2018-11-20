@@ -8,9 +8,9 @@ exports.run = (client, message) => {
     let target = message.member;
 
     let minutes = target.joinedAt.getMinutes();
-    let hours = target.joinedAt.getUTCHours() + 2;
+    let hours = target.joinedAt.getUTCHours() + 1;
     let day = target.joinedAt.getDate();
-    let month = target.joinedAt.getMonth();
+    let month = target.joinedAt.getMonth() + 1;
     let year = target.joinedAt.getFullYear();
 
     let target_role = target.hoistRole;

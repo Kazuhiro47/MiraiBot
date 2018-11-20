@@ -5,7 +5,11 @@ let rmAll = async (nb_msg, message) => {
     let toDelete;
     let delNb;
     while (nb_msg > 0) {
-        delNb = nb_msg % 100;
+		if (nb_msg % 100 === 0) {
+			delNb = 100;
+		} else {
+        	delNb = nb_msg % 100;
+		}
         toDelete = await message.channel.fetchMessages({limit: delNb});
         await message.channel.bulkDelete(toDelete);
         nb_msg -= delNb;
@@ -20,7 +24,10 @@ exports.run = (client, message, args) => {
         message.delete().then(() => {
             let input = args.join(' ');
             let nb_msg = parseInt(input);
-            rmAll(nb_msg, message).catch(console.error);
+            rmAll(nb_msg, message).catch(err => {
+				console.error(err);
+				message.channel.send("```" + err + "```").catch(console.error);
+			});
         });
 
     } else if (message.member.hasPermission("MANAGE_MESSAGES")) {
@@ -28,7 +35,10 @@ exports.run = (client, message, args) => {
         message.delete().then(() => {
             let input = args.join(' ');
             let nb_msg = parseInt(input);
-            rmAll(nb_msg, message).catch(console.error);
+            rmAll(nb_msg, message).catch(err => {
+				console.error(err);
+				message.channel.send("```" + err + "```").catch(console.error);
+			});
         });
 
     } else {
