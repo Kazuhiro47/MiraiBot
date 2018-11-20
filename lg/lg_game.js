@@ -55,10 +55,9 @@ class Game extends IGame {
 
         }).then(() => {
 
-            return this.preparation.channelsHandler._channels.get(this.preparation.channelsHandler.channels.thiercelieux_lg)
-                .send(CommunicationHandler.getLGSampleMsg()
-                    .addField("Joueurs", this.preparation.configuration.getPlayerNames().toString())
-                );
+            return this.stemmingChannel.send(CommunicationHandler.getLGSampleMsg()
+                .addField("Joueurs", this.preparation.configuration.getPlayerNames().toString())
+            );
 
         }).then(msg => {
 

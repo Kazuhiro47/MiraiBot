@@ -53,13 +53,12 @@ class GameFlow extends IGame {
 
             }).then((conf) => {
 
-                resolve(true);
-                //this.GameConfiguration = conf;
-                //return this.gameLoop();
+                this.GameConfiguration = conf;
+                return this.gameLoop();
 
-            })/*.then(() => {
+            }).then(() => {
                 resolve(true);
-            })*/.catch(err => reject(err));
+            }).catch(err => reject(err));
 
         });
     }
@@ -68,9 +67,14 @@ class GameFlow extends IGame {
 
         let end;
         do {
-            end = await new Day(this.GameConfiguration);
-            end = await new Night(this.GameConfiguration);
+            end = await new Day(this.GameConfiguration).goThrough();
+
+            if (end) break;
+
+            end = await new Night(this.GameConfiguration).goThrough();
         } while (end !== true);
+
+        console.log("Game over");
 
     }
 
@@ -84,11 +88,20 @@ class Period {
 
         this.roleMap = this.GameConfiguration.getRoleMap();
 
+        return this;
+
     }
 
 }
 
 class Day extends Period {
+
+    goThrough() {
+        return new Promise((resolve, reject) => {
+            console.log("Going through day");
+            resolve(true);
+        })
+    }
 
 }
 
@@ -202,8 +215,23 @@ class Night extends Period {
     goThrough() {
         return new Promise((resolve, reject) => {
 
+            console.log("Going through night");
             this.GameConfiguration.channelsHandler.sendMessageToVillage("🌌 La nuit tombe.")
-
+                .then(() => Promise.all([
+                    this.callLoupsGarou(),
+                    this.callJoueurDeFlute(),
+                    this.callSalvateur()
+                ]))
+                .then(() => Promise.all([
+                    this.callVoyante(),
+                    this.callChaman(),
+                    this.callInfectPereDesLoups(),
+                    this.callFrereSoeurs()
+                ]))
+                .then(() => Promise.all([
+                    this.callSorciere(),
+                    this.callRenard()
+                ]))
                 .then(() => resolve(this.GameConfiguration))
                 .catch(err => reject(err));
 
