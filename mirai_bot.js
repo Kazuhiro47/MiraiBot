@@ -3,14 +3,11 @@ const bot_data = require('./bot_data.js');
 const processFcts = require('./functions/check_process.js');
 const client = new Discord.Client();
 
-const typingSpeed = 0.2840909090909091;
-
 // UTC + 2 or UTC + 1
-const UTC_LOCAL_TIMESHIFT = 2;
+const UTC_LOCAL_TIMESHIFT = 1;
 
 let generalChannelMiraiTeam = undefined;
 let testBotChanMT = undefined;
-let danganronpaNewsChan = undefined;
 
 const Enmap = require("enmap");
 const EnmapLevel = require('enmap-level');
@@ -45,9 +42,9 @@ client.moderationData = new Enmap({provider: moderationData});
 let Kazuhiro = undefined;
 
 client.on('ready', () => {
-    Kazuhiro = client.users.find('id', '140033402681163776');
-    generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
-    testBotChanMT = client.channels.find("id", "314122440420884480");
+    Kazuhiro = client.users.get('140033402681163776');
+    generalChannelMiraiTeam = client.channels.get("168673025460273152");
+    testBotChanMT = client.channels.get("314122440420884480");
     Kazuhiro.send("El. Psy.. Kongroo.").catch(console.error);
 
     processFcts.processIsRunning("dropbox.exe").then(status => {
@@ -63,7 +60,6 @@ client.on('ready', () => {
         console.error(e);
     }
 
-    //analyseLogChan(new Discord.RichEmbed().setColor(bot_data.bot_values.bot_color).setDescription("~~désolé du fail d'avant~~"), testBotChanMT).catch(console.error);
 });
 
 client.on('error', err => {
@@ -83,6 +79,14 @@ client.on('message', message => {
 
     //console.log(`${message.channel.name} | ${message.author.username} : ${message.cleanContent}`);
 
+    /*const bot_rooms = ['bot_room', 'test_bot'];
+
+    if (message.guild && message.guild.id === bot_data.mirai_team_gid && !bot_rooms.includes(message.channel.name)  && message.author.bot) {
+        message.delete().then(msg => {
+            Kazuhiro.send(msg).catch(console.error);
+        }).catch(console.error);
+    }*/
+
     check_xp(client, message);
     check_message(client, message);
 
@@ -97,13 +101,28 @@ client.on('message', message => {
 
     console.log(`Command: ${command}`);
 
+    if (command === "sdse2") {
+
+        try {
+            let commandFile = require(`./commands/${command}.js`);
+
+            commandFile.run(client, message, args);
+        } catch (e) {
+            console.error(e);
+        }
+
+        return;
+    }
+
+    const freeCmds = ['ah'];
+
     try {
 
         let commandFile = require(`./global_commands/${command}.js`);
 
         console.log(`${date.getUTCDate()}/${date.getUTCMonth() + 1} ${date.getUTCHours() + UTC_LOCAL_TIMESHIFT}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s | ${message.guild} | ${message.channel.name} | ${message.author.username} : ${message.cleanContent}`);
 
-        if (message.guild && message.guild.id === bot_data.mirai_team_gid && message.channel.name !== "bot_room" && message.member && !message.member.hasPermission('BAN_MEMBERS')) {
+        if (message.guild && message.guild.id === bot_data.mirai_team_gid && message.channel.name !== "bot_room" && message.member && !message.member.hasPermission('BAN_MEMBERS') && !freeCmds.includes(command)) {
             message.member.send("Le bot n'est utilisable que dans le channel #bot_room\nton message : " + message.cleanContent).catch(console.error);
             message.delete().catch(console.error);
             return;
@@ -121,7 +140,7 @@ client.on('message', message => {
 
                 console.log(`${date.getUTCDate()}/${date.getUTCMonth() + 1} ${date.getUTCHours() + UTC_LOCAL_TIMESHIFT}h${date.getUTCMinutes()}m${date.getUTCSeconds()}s | ${message.guild} | ${message.channel.name} | ${message.author.username} : ${message.cleanContent}`);
 
-                if (command !== "sdse2" && message.channel.name !== "bot_room" && message.member && !message.member.hasPermission('BAN_MEMBERS')) {
+                if (command !== "sdse2" && message.channel.name !== "bot_room" && message.member && !message.member.hasPermission('BAN_MEMBERS') && !freeCmds.includes(command)) {
                     message.member.send("Le bot n'est utilisable que dans le channel #bot_room\nton message : " + message.cleanContent).catch(console.error);
                     message.delete().catch(console.error);
                     return;
@@ -163,7 +182,7 @@ let find_interval = setInterval(function () {
 
 let minute_interval;
 
-function set_minute_interval() {
+let set_minute_interval = () => {
     clearInterval(find_interval);
     check_birthday();
     minute_interval = setInterval(function () {
@@ -179,7 +198,7 @@ function set_minute_interval() {
         }
 
     }, 60000);
-}
+};
 
 let set_hour_interval = () => {
 
@@ -205,7 +224,7 @@ let set_hour_interval = () => {
 
 let monokuma_interval;
 
-function set_monokuma_announcement() {
+let set_monokuma_announcement = () => {
 
     let morning_done = false;
     let evening_done = false;
@@ -241,7 +260,7 @@ function set_monokuma_announcement() {
         }
 
     }, 60000 * 60);
-}
+};
 
 const monokumaImgs = [
     "https://vignette.wikia.nocookie.net/bloodbrothersgame/images/5/53/Monokuma.jpg/revision/latest/scale-to-width-down/640?cb=20131210191609",
@@ -251,10 +270,16 @@ const monokumaImgs = [
     "https://i.pinimg.com/236x/cc/c5/b1/ccc5b19b6d41e45d108e57433b5c4469.jpg",
     "https://lh3.googleusercontent.com/-Gohd89AiIjM/WgO_OZ5VfwI/AAAAAAAAAEw/Ro9esll7SoEMXhjgjU53oyKjv5MWgT1oQCJoC/w800-h800/Monokuma%2B5.jpg",
     "http://i.imgur.com/T5s569W.gif",
+    "https://i.imgur.com/K14wGy5.jpg?1",
+    "https://i.imgur.com/aH1xD9S.gif"
 ];
 
-function set_morning_day_interval() {
-    const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
+const quotes = [
+    "Commencez par faire ce qui est nécessaire ; puis faites ce qui est possible ; et soudain vous faites l'impossible."
+];
+
+let set_morning_day_interval = () => {
+    const generalChannelMiraiTeam = client.channels.get("168673025460273152");
     const creationDate = client.guilds.get('168673025460273152').createdAt;
 
     let morning_message = new Discord.RichEmbed().setAuthor("Monokuma", "https://vignette.wikia.nocookie.net/danganronpa/images/c/c6/Strikes_Back.jpg/revision/latest?cb=20161029022327")
@@ -265,7 +290,7 @@ function set_morning_day_interval() {
             "Il est l'heure de se lever !\n" +
             "\n" +
             "Préparez-vous à accueillir un autre jour meeeeerveilleux !"
-        ).setImage(get_random_in_array(monokumaImgs));
+        ).setFooter(get_random_in_array(quotes)).setImage(get_random_in_array(monokumaImgs));
 
     if (creationDate) {
         let days = (new Date().valueOf() - creationDate.valueOf()) / 1000 / 60 / 60 / 24;
@@ -296,9 +321,12 @@ function set_morning_day_interval() {
         generalChannelMiraiTeam.send(morning_message).catch(console.error);
 
     }, 60000 * 60 * 24);
-}
+};
 
-function set_evening_interval() {
+const GachaAI = require("./functions/mirai_bot_ai");
+const gachaChannel = client.channels.get('504626600286093312');
+
+let set_evening_interval = () => {
 
     const evening_message = new Discord.RichEmbed().setAuthor("Monokuma", "https://vignette.wikia.nocookie.net/danganronpa/images/c/c6/Strikes_Back.jpg/revision/latest?cb=20161029022327")
         .setColor(bot_data.bot_values.bot_color).addField(
@@ -330,34 +358,29 @@ function set_evening_interval() {
 
         generalChannelMiraiTeam.send(evening_message).catch(console.error);
 
-        generalChannelMiraiTeam.startTyping();
-        Wait.minutes(12)
-            .then(() => Wait.seconds(typingSpeed * "Utilisons le gacha !!".length))
-            .then(() => generalChannelMiraiTeam.send("Utilisons le gacha !!"))
-            .then(() => {generalChannelMiraiTeam.stopTyping(); return Wait.seconds(1)})
-            .then(() => {generalChannelMiraiTeam.startTyping(); return Wait.seconds(typingSpeed * "<gacha daily".length)})
-            .then(() => generalChannelMiraiTeam.send("<gacha daily"))
-            .then(() => Wait.seconds(3))
-            .then(() => generalChannelMiraiTeam.send("Nice"))
-            .then(() => {generalChannelMiraiTeam.stopTyping(); return Wait.seconds(1)})
+        Wait.minutes(Math.floor(Math.random() * 60))
+            .then(() => new GachaAI(300, gachaChannel).doSomething())
+            .then(() => {
+                if (gachaChannel) gachaChannel.stopTyping(true);
+            })
             .catch(console.error);
 
         //analyseLogChan(evening_message, generalChannelMiraiTeam).catch(console.error);
 
     }, 60000 * 60 * 24);
 
-}
+};
 
-function set_day_interval() {
+let set_day_interval = () => {
     check_birthday();
     setInterval(function () {
         check_birthday();
     }, 60000 * 60 * 24);
-}
+};
 
-function check_birthday() {
+let check_birthday = () => {
     let date = new Date();
-    const generalChannelMiraiTeam = client.channels.find("id", "168673025460273152");
+    const generalChannelMiraiTeam = client.channels.get("168673025460273152");
     const fileName = 'mirai_bot.json';
     let day = date.getDate() + 1;
     let month = date.getMonth() + 1;
@@ -419,7 +442,7 @@ function check_birthday() {
 
         }
     }
-}
+};
 
 
 // Login

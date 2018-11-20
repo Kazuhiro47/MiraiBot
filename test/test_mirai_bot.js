@@ -21,14 +21,20 @@ client.login(bot_data.bot_values.bot_token).then(() => {
 
 client.on("message", (message) => {
 
-    if (listencmd && !message.author.bot && message.content.startsWith("/test")) {
+    if (listencmd && !message.author.bot && message.content.startsWith("/lg")) {
 
         const args = message.content.slice(1).trim().split(/ +/g);
         args.shift();
 
-        let commandFile = require(`../global_commands/jisho.js`);
+        let commandFile = require(`../global_commands/lg.js`);
 
         commandFile.run(client, message, args);
     }
+
+});
+
+client.on('ready', () => {
+
+
 
 });
