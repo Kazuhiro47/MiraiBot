@@ -8,17 +8,17 @@ description: Mirai Bot est un bot Discord simple pour améliorer votre expérien
 
 ## Commandes du Mirai Bot
 
-| commande | ce que cela fait |
-| :--- | :--- |
-| /lg | lancer une partie de Loup Garou |
-| /avatar | afficher votre avatar |
-| /shifumi | jouer au shifumi |
-| /quizz | apprendre le japonais grâce aux quizz |
-| /calc | calculatrice |
-| /pof | pile ou face |
-| /sondage | faire un sondage |
-| /translate | traduit une phrase écrite en langue étrangère en français |
-| /jisho | traduit du texte japonais en anglais |
+| commande | ce que cela fait | arguments |
+| :--- | :--- | :--- |
+| /lg | lancer une partie de Loup Garou | aucun |
+| /avatar | afficher votre avatar | pseudo \(optionnel\) |
+| /shifumi | jouer au shifumi | aucun |
+| /quizz | apprendre le japonais grâce aux quizz | optionnels |
+| /calc | calculatrice | expression à calculer |
+| /pof | pile ou face | aucun |
+| /sondage | faire un sondage | Question/choix1/choix2/... |
+| /translate | traduit une phrase écrite en langue étrangère en français | phrase |
+| /jisho | traduit du texte japonais en anglais | phrase japonaise |
 
 #### 
 

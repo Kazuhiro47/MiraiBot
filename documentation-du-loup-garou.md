@@ -4,6 +4,22 @@ description: Ci-dessous la documentation complète du loup garou
 
 # Documentation du Loup Garou
 
+## Objectifs
+
+L'objectif est de coder un bot discord qui puisse animer une session du jeu Loup garou. 
+
+Le bot doit être capable de gérer tous les rôles existant sur Wikipédia, et doit être paramétrable afin de définir les règles de la partie \(nombre de villageois, nombre de loup, etc.\).
+
+Le bot doit distribuer de manière équitable et aléatoire les rôles ; enfin, le bot doit animer la partie.
+
+## Rappel des règles du jeu de Loup Garou
+
+**Les Loups-Garous de Thiercelieux** est un [jeu de société](https://fr.wikipedia.org/wiki/Jeu_de_soci%C3%A9t%C3%A9) d'ambiance dans lequel chaque joueur incarne un villageois ou un [loup-garou](https://fr.wikipedia.org/wiki/Lycanthrope), et dont le but général est :
+
+* pour les villageois \(dont certains ont des pouvoirs ou des particularités\) : démasquer et tuer tous les loups-garous
+* pour les loups-garous : d'éliminer tous les villageois et ne pas se faire démasquer
+* pour les amoureux : de finir la partie en couple sans que l'un d'eux ne meure \(auquel cas l'autre se « suicidera » de chagrin\)
+
 ## Normes
 
 {% hint style="info" %}
