@@ -6,11 +6,11 @@ description: Ci-dessous la documentation complète du loup garou
 
 ## Objectifs
 
-L'objectif est de coder un bot discord qui puisse animer une session du jeu Loup garou. 
+L'objectif du bot est de pouvoir animer une session du jeu Loup garou. 
 
-Le bot doit être capable de gérer tous les rôles existant sur Wikipédia, et doit être paramétrable afin de définir les règles de la partie \(nombre de villageois, nombre de loup, etc.\).
+Le bot est capable de gérer tous les rôles existant sur Wikipédia, et et est paramétrable afin de définir les règles de la partie \(nombre de villageois, nombre de loup, etc.\).
 
-Le bot doit distribuer de manière équitable et aléatoire les rôles ; enfin, le bot doit animer la partie.
+Le bot distribue de manière équitable et aléatoire les rôles ; enfin, le bot anime la partie.
 
 ## Rappel des règles du jeu de Loup Garou
 
