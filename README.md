@@ -10,7 +10,7 @@ description: Mirai Bot est un bot Discord simple pour améliorer votre expérien
 
 | commande | ce que cela fait | arguments |
 | :--- | :--- | :--- |
-| /lg | lancer une partie de Loup Garou | aucun |
+|  |  |  |
 | /avatar | afficher votre avatar | pseudo \(optionnel\) |
 | /shifumi | jouer au shifumi | aucun |
 | /quizz | apprendre le japonais grâce aux quizz | optionnels |
