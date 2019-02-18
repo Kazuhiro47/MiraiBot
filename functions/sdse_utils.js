@@ -2440,7 +2440,7 @@ const ALL_DIRS = {
     ]
 };
 
-let ALL_IMG = {
+const ALL_IMG = {
     flash: {
         "028": "https://image.ibb.co/b3tuw8/fla_028.png",
         "021": "https://image.ibb.co/hW0w9T/fla_021.png",
@@ -3438,7 +3438,7 @@ let ALL_IMG = {
     }
 };
 
-let CHAR_IDS = {
+const CHAR_IDS = {
     0x00: "HINATA",
     0x01: "KOMAEDA",
     0x02: "TOGAMI",
@@ -3501,7 +3501,7 @@ class DR1File extends DRFile {
 
     constructor(fileName) {
         super(fileName);
-        this._basePath = "../../Danganronpa traduction FR/Super_Duper_Script_Editor";
+        this._basePath = "../../Dropbox/Danganronpa traduction FR/Super_Duper_Script_Editor";
         this._fulldir = `${this._basePath}/${this.directory}/`;
     }
 
@@ -3511,7 +3511,7 @@ class DR2File extends DRFile {
 
     constructor(fileName) {
         super(fileName);
-        this._basePath = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01";
+        this._basePath = "../../Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01";
         this._fulldir = `${this._basePath}/jp/script/${this.directory}/`;
 
         /**
@@ -3532,7 +3532,7 @@ class DR2File extends DRFile {
                 continue;
             }
 
-            let line = new DR2Line(`../../Danganronpa 2 traduction FR/${scene.path}`);
+            let line = new DR2Line(`../../Dropbox/Danganronpa 2 traduction FR/${scene.path}`);
             if (!(await line.checkFile())) {
                 console.error(`Couldn't open file ${this._basePath}/jp/script/${scene.path}`);
                 return;
@@ -3797,7 +3797,7 @@ let getDupesOf = async (lineObj, dupesDB, index) => {
 
         let dupe = dupes[i];
 
-        lineObjPath = `../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/${dupe.replace(/\\/g, "/")}`;
+        lineObjPath = `../../Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/${dupe.replace(/\\/g, "/")}`;
 
         let line = new DR2Line(lineObjPath);
         if (!(await line.checkFile())) {
@@ -3816,7 +3816,7 @@ let getDupesOf = async (lineObj, dupesDB, index) => {
 
 let constructDupesDB = () => new Promise((resolve, reject) => {
 
-    fs.readFile("../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/dupesDR2STEAM.csv", 'utf8', (err, data) => {
+    fs.readFile("../../Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/dupesDR2STEAM.csv", 'utf8', (err, data) => {
         if (err) {
             return reject(err);
         }
@@ -3937,7 +3937,7 @@ class BasicMenu {
 class TerminologySubMenu {
 
     constructor(channel, user) {
-        this.terminologyPath = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/TerminologyDR2.csv";
+        this.terminologyPath = "../../Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/TerminologyDR2.csv";
 
         this.channel = channel;
         this.menu = new Menu(this.channel);

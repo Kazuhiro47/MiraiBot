@@ -8,6 +8,8 @@ class GachaAI {
         this.points = points;
         this.channel = channel;
 
+        console.log(channel);
+
         this.reactionSentences = ["Nice", "Parfait", "Merveilleux", "Splendide", "Naïssu"];
 
         return this;

@@ -748,6 +748,9 @@ class SDSE2Editor extends Editor {
             client.gSettings.set(message.guild.id, bot_data.gSettings);
             this.gSettings = client.gSettings.get(message.guild.id);
         }
+        if (!this.gSettings.sdse2) {
+            this.gSettings.sdse2 = [];
+        }
         this.gSettings.sdse2.push(message.channel.id);
         client.gSettings.set(message.guild.id, this.gSettings);
 

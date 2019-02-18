@@ -10,7 +10,7 @@ const KazuhiroId = "140033402681163776";
 describe("open file tests", () => {
 
     it('should read all files correctly', async () => {
-        let path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
+        let path = "C:/Users/Administrator/Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
         let dirs = await readDir(path);
 
         for (let i = 0; i < dirs.length; i++) {

@@ -118,6 +118,16 @@ class CleverBotDisscussion {
 
 }
 
+let findCorrectRole = (roleString, message) => new Promise((resolve, reject) => {
+    message.guild.roles.array().forEach(role => {
+
+        if (role.name.split(' ')[1] === roleString) {
+            resolve(role);
+        }
+
+    });
+});
+
 module.exports = {
 
     MemberUserXP, check_bad_words, shuffle_array,
@@ -203,9 +213,13 @@ module.exports = {
             });
         }
 
+        if (message.author.id === "160449085080338432" && message.cleanContent.toLowerCase().includes("hokuto")) {
+            message.react('👍').catch(console.error);
+        }
+
     },
 
-    check_xp: (client, message) => {
+    check_xp: async (client, message) => {
 
         if (message.author.id !== bot_data.bot_values.bot_id && message.member && message.author.bot === false) {
             let memberXPData = client.memberXP.get(message.author.id);
@@ -284,7 +298,17 @@ module.exports = {
                 });
             } else {
 
+                let xpTableArray = Object.keys(bot_data.xp_table);
 
+                for (let i = 0 ; i < xpTableArray.length && i < memberXPData.level ; i++) {
+                    let correctRole = await findCorrectRole(bot_data.xp_table[i + 1].string, message);
+
+                    if (message.member) {
+                        message.member.addRole(correctRole).catch(console.error);
+                    } else {
+                        console.error("Error while trying to add role. Member does not exist.");
+                    }
+                }
 
             }
 

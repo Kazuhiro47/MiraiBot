@@ -22,7 +22,7 @@ let readDir = (path) => new Promise((resolve, reject) => {
 describe("open file tests", () => {
 
     it('should read all files correctly', async () => {
-        let path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
+        let path = "C:/Users/Administrator/Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
         let dirs = await readDir(path);
 
         for (let i = 0; i < dirs.length; i++) {
@@ -43,7 +43,7 @@ describe("open file tests", () => {
 describe("DR2Line", () => {
 
     it('should retrieve a translated file', async () => {
-        const path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script/00_System.pak/0000.txt";
+        const path = "C:/Users/Administrator/Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script/00_System.pak/0000.txt";
         let dr2F = new SDSE2.DR2Line(path);
         let check = await dr2F.checkFile();
 
@@ -54,7 +54,7 @@ describe("DR2Line", () => {
     });
 
     it('should retrieve an untranslated file', async () => {
-        const path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script/e04_238_000.lin/0010.txt";
+        const path = "C:/Users/Administrator/Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script/e04_238_000.lin/0010.txt";
         let dr2F = new SDSE2.DR2Line(path);
         let check = await dr2F.checkFile();
 
@@ -175,7 +175,7 @@ describe('duplicate system', () => {
 
     it('getDupesOf function test', async function () {
 
-        let line = new SDSE2.DR2Line(`../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01\\jp\\script\\e00_001_180.lin\\0012.txt`);
+        let line = new SDSE2.DR2Line(`C:/Users/Administrator/Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01\\jp\\script\\e00_001_180.lin\\0012.txt`);
         if (!(await line.checkFile())) {
             return;
         }

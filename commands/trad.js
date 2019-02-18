@@ -34,8 +34,8 @@ class DR2Translation extends TranslationStatus {
     constructor(client, message) {
         super(client, message);
 
-        this.path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
-        this.path2 = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/";
+        this.path = "../../../Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
+        this.path2 = "../../../Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/";
 
         this.part = {
             "System Text": [0, 0],

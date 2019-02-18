@@ -47,13 +47,6 @@ client.on('ready', () => {
     testBotChanMT = client.channels.get("314122440420884480");
     Kazuhiro.send("El. Psy.. Kongroo.").catch(console.error);
 
-    processFcts.processIsRunning("dropbox.exe").then(status => {
-        if (!status) {
-            processFcts.runDropbox().catch(console.error);
-            Kazuhiro.send("Launching dropbox").catch(console.error);
-        }
-    }).catch(console.error);
-
     try {
         initTwitterListener(generalChannelMiraiTeam, Kazuhiro);
     } catch (e) {
@@ -87,7 +80,7 @@ client.on('message', message => {
         }).catch(console.error);
     }*/
 
-    check_xp(client, message);
+    check_xp(client, message).catch(console.error);
     check_message(client, message);
 
     const args = message.content.slice(1).trim().split(/ +/g);
@@ -156,7 +149,6 @@ client.on('message', message => {
         }
     }
 
-
 });
 
 fs.readdir("./events/", (err, files) => {
@@ -202,23 +194,9 @@ let set_minute_interval = () => {
 
 let set_hour_interval = () => {
 
-    processFcts.processIsRunning("dropbox.exe").then(status => {
-        if (!status) {
-            processFcts.runDropbox().catch(console.error);
-            Kazuhiro.send("Launching dropbox").catch(console.error);
-        }
-    }).catch(console.error);
+    /*setInterval(() => {
 
-    setInterval(() => {
-
-        processFcts.processIsRunning("dropbox.exe").then(status => {
-            if (!status) {
-                processFcts.runDropbox().catch(console.error);
-                Kazuhiro.send("Launching dropbox").catch(console.error);
-            }
-        }).catch(console.error);
-
-    }, 60000 * 60);
+    }, 60000 * 60);*/
 
 };
 

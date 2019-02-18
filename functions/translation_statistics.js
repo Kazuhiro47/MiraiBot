@@ -1,7 +1,7 @@
 const fs = require('graceful-fs');
 const get_revisions_stats = require("./dropbox").get_revisions_stats;
-const dr1_path = "../../Danganronpa traduction FR/Super_Duper_Script_Editor";
-const dr2_path = "../../Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
+const dr1_path = "../../../Dropbox/Danganronpa traduction FR/Super_Duper_Script_Editor";
+const dr2_path = "../../../Dropbox/Danganronpa 2 traduction FR/SDSE2_Shared_Data/data01/jp/script";
 
 class Read {
     constructor(path, encoding) {
