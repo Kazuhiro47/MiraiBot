@@ -75,15 +75,7 @@ exports.run = (client, message, args) => {
             if (parameters.length === 2) {
 
                 q.hiraganaBasic(message).then((xp) => {
-                    let memberXPData = client.memberXP.get(message.author.id);
-                    if (!memberXPData) {
-                        console.log("Xp undefined");
-                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                        memberXPData = client.memberXP.get(message.author.id);
-                    }
-                    memberXPData.xp += xp;
-                    client.memberXP.set(message.author.id, memberXPData);
-                    printXpReward(message, xp);
+                    /**/
                     q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
@@ -93,29 +85,13 @@ exports.run = (client, message, args) => {
                         return new Promise((resolve, reject) => reject(true));
                     }
                 }).then((xp) => {
-                    let memberXPData = client.memberXP.get(message.author.id);
-                    if (!memberXPData) {
-                        console.log("Xp undefined");
-                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                        memberXPData = client.memberXP.get(message.author.id);
-                    }
-                    memberXPData.xp += xp;
-                    client.memberXP.set(message.author.id, memberXPData);
-                    printXpReward(message, xp);
+                    /**/
                     q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
                         q.hiraganaPalatalised(message).then(xp => {
-                            let memberXPData = client.memberXP.get(message.author.id);
-                            if (!memberXPData) {
-                                console.log("Xp undefined");
-                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                                memberXPData = client.memberXP.get(message.author.id);
-                            }
-                            memberXPData.xp += xp;
-                            client.memberXP.set(message.author.id, memberXPData);
-                            printXpReward(message, xp);
+                            /**/
                             q.resetStats();
                         });
                     } else {
@@ -128,15 +104,7 @@ exports.run = (client, message, args) => {
 
                 if (parameters[2] === 'all') {
                     q.hiraganaAll(message).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
-                        if (!memberXPData) {
-                            console.log("Xp undefined");
-                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                            memberXPData = client.memberXP.get(message.author.id);
-                        }
-                        memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+
                         q.resetStats();
                     }).catch(console.error);
                 } else if (parameters[2] === "débutant") {
@@ -146,16 +114,6 @@ exports.run = (client, message, args) => {
                         for (let i = 1 ; i <= 10 ; i++) {
                             xp = await q.hiraganaBegginer(message, i);
                             q.resetStats();
-                            let memberXPData = client.memberXP.get(message.author.id);
-                            if (!memberXPData) {
-                                console.log("Xp undefined");
-                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                                memberXPData = client.memberXP.get(message.author.id);
-                            }
-                            console.log(memberXPData);
-                            memberXPData.xp += xp;
-                            client.memberXP.set(message.author.id, memberXPData);
-                            printXpReward(message, xp);
                             if (await askUserIfContinue(message) === false) {
                                 return;
                             }
@@ -172,15 +130,7 @@ exports.run = (client, message, args) => {
             if (parameters.length === 2) {
 
                 q.katakanaBasic(message).then((xp) => {
-                    let memberXPData = client.memberXP.get(message.author.id);
-                    if (!memberXPData) {
-                        console.log("Xp undefined");
-                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                        memberXPData = client.memberXP.get(message.author.id);
-                    }
-                    memberXPData.xp += xp;
-                    client.memberXP.set(message.author.id, memberXPData);
-                    printXpReward(message, xp);
+
                     q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
@@ -190,28 +140,12 @@ exports.run = (client, message, args) => {
                         return new Promise((resolve, reject) => reject(true));
                     }
                 }).then((xp) => {
-                    let memberXPData = client.memberXP.get(message.author.id);
-                    if (!memberXPData) {
-                        console.log("Xp undefined");
-                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                        memberXPData = client.memberXP.get(message.author.id);
-                    }
-                    memberXPData.xp += xp;
-                    client.memberXP.set(message.author.id, memberXPData);
                     q.resetStats();
                     printXpReward(message, xp);
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
                         q.katakanaPalatalised(message).then(xp => {
-                            let memberXPData = client.memberXP.get(message.author.id);
-                            if (!memberXPData) {
-                                console.log("Xp undefined");
-                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                                memberXPData = client.memberXP.get(message.author.id);
-                            }
-                            memberXPData.xp += xp;
-                            client.memberXP.set(message.author.id, memberXPData);
                             q.resetStats();
                             printXpReward(message, xp);
                         });
@@ -225,14 +159,6 @@ exports.run = (client, message, args) => {
 
                 if (parameters[2] === 'all') {
                     q.katakanaAll(message).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
-                        if (!memberXPData) {
-                            console.log("Xp undefined");
-                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                            memberXPData = client.memberXP.get(message.author.id);
-                        }
-                        memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
                         q.resetStats();
                         printXpReward(message, xp);
                     }).catch(console.error);
@@ -242,15 +168,7 @@ exports.run = (client, message, args) => {
                         for (let i = 1 ; i <= 10 ; i++) {
                             xp = await q.katakanaBegginer(message, i);
                             q.resetStats();
-                            let memberXPData = client.memberXP.get(message.author.id);
-                            if (!memberXPData) {
-                                console.log("Xp undefined");
-                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                                memberXPData = client.memberXP.get(message.author.id);
-                            }
-                            memberXPData.xp += xp;
-                            client.memberXP.set(message.author.id, memberXPData);
-                            printXpReward(message, xp);
+
                             if (await askUserIfContinue(message) === false) {
                                 return;
                             }
@@ -267,15 +185,7 @@ exports.run = (client, message, args) => {
             if (parameters.length === 2) {
 
                 q.allBasic(message).then((xp) => {
-                    let memberXPData = client.memberXP.get(message.author.id);
-                    if (!memberXPData) {
-                        console.log("Xp undefined");
-                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                        memberXPData = client.memberXP.get(message.author.id);
-                    }
-                    memberXPData.xp += xp;
-                    client.memberXP.set(message.author.id, memberXPData);
-                    printXpReward(message, xp);
+
                     q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
@@ -285,29 +195,13 @@ exports.run = (client, message, args) => {
                         return new Promise((resolve, reject) => reject(true));
                     }
                 }).then((xp) => {
-                    let memberXPData = client.memberXP.get(message.author.id);
-                    if (!memberXPData) {
-                        console.log("Xp undefined");
-                        client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                        memberXPData = client.memberXP.get(message.author.id);
-                    }
-                    memberXPData.xp += xp;
-                    client.memberXP.set(message.author.id, memberXPData);
-                    printXpReward(message, xp);
+
                     q.resetStats();
                     return askUserIfContinue(message);
                 }).then(wantsToContinue => {
                     if (wantsToContinue) {
                         q.allPalatalised(message).then(xp => {
-                            let memberXPData = client.memberXP.get(message.author.id);
-                            if (!memberXPData) {
-                                console.log("Xp undefined");
-                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                                memberXPData = client.memberXP.get(message.author.id);
-                            }
-                            memberXPData.xp += xp;
-                            client.memberXP.set(message.author.id, memberXPData);
-                            printXpReward(message, xp);
+
                             q.resetStats();
                         });
                     } else {
@@ -320,15 +214,7 @@ exports.run = (client, message, args) => {
 
                 if (parameters[2] === 'all') {
                     q.allAll(message).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
-                        if (!memberXPData) {
-                            console.log("Xp undefined");
-                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                            memberXPData = client.memberXP.get(message.author.id);
-                        }
-                        memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+
                         q.resetStats();
                     }).catch(console.error);
                 } else if (parameters[2] === 'débutant') {
@@ -337,15 +223,7 @@ exports.run = (client, message, args) => {
                         for (let i = 1 ; i <= 10 ; i++) {
                             xp = await q.allBegginer(message, i);
                             q.resetStats();
-                            let memberXPData = client.memberXP.get(message.author.id);
-                            if (!memberXPData) {
-                                console.log("Xp undefined");
-                                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                                memberXPData = client.memberXP.get(message.author.id);
-                            }
-                            memberXPData.xp += xp;
-                            client.memberXP.set(message.author.id, memberXPData);
-                            printXpReward(message, xp);
+
                             if (await askUserIfContinue(message) === false) {
                                 return;
                             }
@@ -361,67 +239,27 @@ exports.run = (client, message, args) => {
             if (parameters.length === 3) {
                 if (parameters[2] === "jlpt5") {
                     q.JLPT5(message).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
-                        if (!memberXPData) {
-                            console.log("Xp undefined");
-                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                            memberXPData = client.memberXP.get(message.author.id);
-                        }
-                        memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
                         q.resetStats();
                         printXpReward(message, xp);
                     }).catch(console.error);
                 } else if (parameters[2] === "jlpt4") {
                     q.JLPT4(message).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
-                        if (!memberXPData) {
-                            console.log("Xp undefined");
-                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                            memberXPData = client.memberXP.get(message.author.id);
-                        }
-                        memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+
                         q.resetStats();
                     }).catch(console.error);
                 } else if (parameters[2] === "jlpt3") {
                     q.JLPT3(message).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
-                        if (!memberXPData) {
-                            console.log("Xp undefined");
-                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                            memberXPData = client.memberXP.get(message.author.id);
-                        }
-                        memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+
                         q.resetStats();
                     }).catch(console.error);
                 } else if (parameters[2] === "jlpt2") {
                     q.JLPT2(message).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
-                        if (!memberXPData) {
-                            console.log("Xp undefined");
-                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                            memberXPData = client.memberXP.get(message.author.id);
-                        }
-                        memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+
                         q.resetStats();
                     }).catch(console.error);
                 } else if (parameters[2] === "jlpt1") {
                     q.JLPT1(message).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
-                        if (!memberXPData) {
-                            console.log("Xp undefined");
-                            client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                            memberXPData = client.memberXP.get(message.author.id);
-                        }
-                        memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+                        /**/
                         q.resetStats();
                     }).catch(console.error);
                 }
@@ -430,62 +268,62 @@ exports.run = (client, message, args) => {
             if (parameters.length === 3) {
                 if (parameters[2] === "jlpt5") {
                     q.JLPT5(message, true).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
+                        /*let memberXPData = client.memberXP.get(message.author.id);
                         if (!memberXPData) {
                             client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
                             memberXPData = client.memberXP.get(message.author.id);
                         }
                         memberXPData.xp += xp;
-                        client.memberXP.set(message.author.id, memberXPData);
+                        client.memberXP.set(message.author.id, memberXPData);*/
                         q.resetStats();
                         printXpReward(message, xp);
                     }).catch(console.error);
                 } else if (parameters[2] === "jlpt4") {
                     q.JLPT4(message, true).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
+                        /*let memberXPData = client.memberXP.get(message.author.id);
                         if (!memberXPData) {
                             client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
                             memberXPData = client.memberXP.get(message.author.id);
                         }
                         memberXPData.xp += xp;
                         client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+                        printXpReward(message, xp);*/
                         q.resetStats();
                     }).catch(console.error);
                 } else if (parameters[2] === "jlpt3") {
                     q.JLPT3(message, true).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
+                        /*let memberXPData = client.memberXP.get(message.author.id);
                         if (!memberXPData) {
                             client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
                             memberXPData = client.memberXP.get(message.author.id);
                         }
                         memberXPData.xp += xp;
                         client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+                        printXpReward(message, xp);*/
                         q.resetStats();
                     }).catch(console.error);
                 } else if (parameters[2] === "jlpt2") {
                     q.JLPT2(message, true).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
+                        /*let memberXPData = client.memberXP.get(message.author.id);
                         if (!memberXPData) {
                             client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
                             memberXPData = client.memberXP.get(message.author.id);
                         }
                         memberXPData.xp += xp;
                         client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+                        printXpReward(message, xp);*/
                         q.resetStats();
                     }).catch(console.error);
                 } else if (parameters[2] === "jlpt1") {
                     q.JLPT1(message, true).then(xp => {
-                        let memberXPData = client.memberXP.get(message.author.id);
+                        /*let memberXPData = client.memberXP.get(message.author.id);
                         if (!memberXPData) {
                             client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
                             memberXPData = client.memberXP.get(message.author.id);
                         }
                         memberXPData.xp += xp;
                         client.memberXP.set(message.author.id, memberXPData);
-                        printXpReward(message, xp);
+                        printXpReward(message, xp);*/
                         q.resetStats();
                     }).catch(console.error);
                 }

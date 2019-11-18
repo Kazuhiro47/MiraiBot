@@ -7,7 +7,6 @@ const get_file_data = require("../functions/dropbox").get_file_data;
 const RichEmbed = require("discord.js").RichEmbed;
 const get_revisions = require("../functions/dropbox").get_revisions;
 const get_random_index = require("../functions/parsing_functions").get_random_index;
-const write_to_file = require("../functions/write_json").write_to_file;
 const https = require("https");
 const bot_data = require("../bot_data.js");
 const utils = require("../functions/utils");
@@ -494,7 +493,7 @@ exports.run = (client, message) => {
 
     if (command[0] === 'dr1') {
 
-        let cleaned_command = command[1].toLowerCase().trim();
+        /*let cleaned_command = command[1].toLowerCase().trim();
         if (cleaned_command === 'récurrente' || cleaned_command.startsWith('rec') || cleaned_command.startsWith('réc')) {
 
             //fs.readFile("../../Danganronpa traduction FR/Super_Duper_Script_Editor/SDSE.csv")
@@ -511,7 +510,7 @@ exports.run = (client, message) => {
 
             }).catch(console.error);
 
-        }
+        }*/
 
     } else if (command[0] === 'dr2') {
 
@@ -529,7 +528,7 @@ exports.run = (client, message) => {
         }
 
         if (cleaned_command === "avancement" || cleaned_command.startsWith("avan")) {
-            translationStatus.avancement2().catch(console.error);
+            //translationStatus.avancement2().catch(console.error);
         }
 
         if (cleaned_command === 'get' && command.length === 3) {

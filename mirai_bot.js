@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const bot_data = require('./bot_data.js');
 const processFcts = require('./functions/check_process.js');
 const client = new Discord.Client();
+const mysql = require('promise-mysql');
 
 // UTC + 2 or UTC + 1
 const UTC_LOCAL_TIMESHIFT = 1;
@@ -40,6 +41,52 @@ const moderationData = new EnmapLevel({name: 'moderationData'});
 client.moderationData = new Enmap({provider: moderationData});
 
 let Kazuhiro = undefined;
+let miraiTeam = undefined;
+
+let updateMiraiTeamDB = async (miraiTeam, conn) => {
+    await conn.beginTransaction();
+    let j = 0;
+
+    try {
+        let membersArray = miraiTeam.members.array();
+        for (let i = 0 ; i < membersArray.length ; i++) {
+            let member = membersArray[i];
+            let req = await conn.query(
+                'SELECT * FROM mirai_team_log.server_member WHERE member_id = ?',
+                [member.id]
+            );
+            if (req.length === 0) {
+                await conn.query(
+                    'INSERT INTO mirai_team_log.server_member (member_id, avatarURL, name) VALUES (?, ?, ?)',
+                    [member.id, member.user.avatarURL, member.user.username]
+                );
+            }
+            j += 1;
+        }
+
+        let channelsArray = miraiTeam.channels.array();
+        for (let i = 0 ; i < channelsArray.length ; i++) {
+            let channel = channelsArray[i];
+            let req = await conn.query(
+                'SELECT * FROM mirai_team_log.server_channel WHERE channel_id = ?',
+                [channel.id]
+            );
+            if (req.length === 0) {
+                await conn.query(
+                    'INSERT INTO mirai_team_log.server_channel (channel_id, name) VALUES (?, ?)',
+                    [channel.id, channel.name]
+                );
+            }
+            j += 1;
+        }
+        await conn.commit();
+    } catch (e) {
+        await conn.rollback();
+        throw e;
+    }
+
+    return j;
+};
 
 client.on('ready', () => {
     Kazuhiro = client.users.get('140033402681163776');
@@ -47,8 +94,30 @@ client.on('ready', () => {
     testBotChanMT = client.channels.get("314122440420884480");
     Kazuhiro.send("El. Psy.. Kongroo.").catch(console.error);
 
+    /*mysql.createConnection({
+        host: 'amadeusdb.cirn3jnlkw1k.eu-west-3.rds.amazonaws.com',
+        user: 'amadeus',
+        password: 'zqsesdswxdxcplmplm11037',
+        port: 3306,
+        connectTimeout: 60000
+    }).then(conn => {
+        client.db = conn;
+
+        miraiTeam = client.guilds.get('168673025460273152');
+
+        updateMiraiTeamDB(miraiTeam, conn).then(res => console.log(`${res} elements updated`)).catch(console.error);
+
+        //const registerAllLogs = require("./registerLogs");
+        //registerAllLogs(client).then(() => console.log('OKOK')).catch(console.error);
+
+        console.log('Mysql Database connected');
+        Kazuhiro.send('Mysql Database connected').catch(console.error);
+    }).catch(err => {
+        console.error(err);
+    });*/
+
     try {
-        initTwitterListener(generalChannelMiraiTeam, Kazuhiro);
+        //initTwitterListener(generalChannelMiraiTeam, Kazuhiro);
     } catch (e) {
         console.error(e);
     }
@@ -80,8 +149,8 @@ client.on('message', message => {
         }).catch(console.error);
     }*/
 
-    check_xp(client, message).catch(console.error);
-    check_message(client, message);
+    //check_xp(client, message).catch(console.error);
+    //check_message(client, message);
 
     const args = message.content.slice(1).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
@@ -253,7 +322,18 @@ const monokumaImgs = [
 ];
 
 const quotes = [
-    "Commencez par faire ce qui est nécessaire ; puis faites ce qui est possible ; et soudain vous faites l'impossible."
+    "La nature fait les hommes semblables, la vie les rend différents.",
+    "Chercher à comprendre les questions est plus intéressant que de chercher à connaître les réponses.",
+    "Celui qui ne progresse pas chaque jour, recule chaque jour.",
+    "Une petite impatience ruine un grand projet.",
+    "Apprendre sans réfléchir est vain. Réfléchir sans apprendre est dangereux.",
+    "Commencez par faire ce qui est nécessaire ; puis faites ce qui est possible ; et soudain vous faites l'impossible.",
+    "Les professeurs ouvrent la porte, mais vous devez entrer par vous-même.",
+    "Le seigneur est le bateau, les gens ordinaires l'eau : l'eau porte le bateau ou le fait chavirer.",
+    "Chaumière où l'on rit vaut mieux que palais où l'on pleure.",
+    "L'archer est un modèle pour le sage; quand il a manqué le centre de la cible, il s'en prend à lui-même.",
+    "Ne craignez pas d’être lent, craignez seulement d’être à l’arrêt.",
+    "Il suffit qu'un homme avisé entende une chose pour en apprendre dix.",
 ];
 
 let set_morning_day_interval = () => {
@@ -306,6 +386,7 @@ const gachaChannel = client.channels.get('504626600286093312');
 
 let set_evening_interval = () => {
 
+
     const evening_message = new Discord.RichEmbed().setAuthor("Monokuma", "https://vignette.wikia.nocookie.net/danganronpa/images/c/c6/Strikes_Back.jpg/revision/latest?cb=20161029022327")
         .setColor(bot_data.bot_values.bot_color).addField(
             "Mm, ahem, ceci est une annonce de l'école.",
@@ -315,7 +396,7 @@ let set_evening_interval = () => {
             "Les salons discord vont bientôt être fermés, et y discuter à \n" +
             "partir de maintenant est strictement interdit.\n" +
             "Maintenant, faites de beaux rêves ! Le marchand de sable va bientôt passer..."
-        ).setImage(get_random_in_array(monokumaImgs));
+        ).setImage(get_random_in_array(monokumaImgs)).addField("Citation du jour", get_random_in_array(quotes));
 
     generalChannelMiraiTeam.send(evening_message).catch(console.error);
 
@@ -332,7 +413,7 @@ let set_evening_interval = () => {
                 "Les salons discord vont bientôt être fermés, et y discuter à \n" +
                 "partir de maintenant est strictement interdit.\n" +
                 "Maintenant, faites de beaux rêves ! Le marchand de sable va bientôt passer..."
-            ).setImage(get_random_in_array(monokumaImgs));
+            ).setImage(get_random_in_array(monokumaImgs)).addField("Citation du jour", get_random_in_array(quotes));
 
         generalChannelMiraiTeam.send(evening_message).catch(console.error);
 

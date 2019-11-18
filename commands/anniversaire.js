@@ -5,6 +5,7 @@ const write_to_file = require("../functions/write_json").write_to_file;
 
 exports.run = (client, message) => {
 
+    console.log('anniversaire');
     const command = message.content.slice('anniversaire '.length, message.content.length).trim().split(/ +/g);
 
     function error_cmd(message, fields = []) {

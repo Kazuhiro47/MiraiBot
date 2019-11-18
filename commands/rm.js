@@ -19,18 +19,8 @@ let rmAll = async (nb_msg, message) => {
 
 exports.run = (client, message, args) => {
 
-    if (!message.member && message.author.id === bot_data.bot_values.bot_owners[0]) {
-
-        message.delete().then(() => {
-            let input = args.join(' ');
-            let nb_msg = parseInt(input);
-            rmAll(nb_msg, message).catch(err => {
-				console.error(err);
-				message.channel.send("```" + err + "```").catch(console.error);
-			});
-        });
-
-    } else if (message.member.hasPermission("MANAGE_MESSAGES")) {
+    if ((!message.member && message.author.id === bot_data.bot_values.bot_owners[0]) ||
+        message.member.hasPermission("MANAGE_MESSAGES")) {
 
         message.delete().then(() => {
             let input = args.join(' ');

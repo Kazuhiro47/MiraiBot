@@ -235,26 +235,17 @@ let analyseLogChan = async (client, channel) => {
 
             const username = firstMessage.first().content.split("modified")[0].trim();
             const messageContentArray = firstMessage.first().content.split("modified")[1].split(/ +/g);
-            let user = find_user(client, username);
 
-            if (!user) {
-                let Kazuhiro = client.users.find('id', '140033402681163776');
-
-                Kazuhiro.send(`L'utilisateur ${username} est introuvable`).catch(console.error);
-                unknownUsers[username] = true;
-
-            } else {
-
-                if (!(user.id in stats)) {
-                    stats[user.id] = 0;
+            
+                if (!(username in stats)) {
+                    stats[username] = 0;
                 }
 
                 if (firstMessage.first().content.split("modified")[1].indexOf("other") !== -1) {
-                    stats[user.id] += 1 + parseInt(messageContentArray[messageContentArray.length - 3]);
+                    stats[username] += 1 + parseInt(messageContentArray[messageContentArray.length - 3]);
                 } else {
-                    stats[user.id] += 1;
+                    stats[username] += 1;
                 }
-            }
         }
 
         let checkIfArrayHasTodayTS = (msgArray) => {
@@ -287,31 +278,17 @@ let analyseLogChan = async (client, channel) => {
                     if (username === "AinnCali") username = 'Ainn Zoray';
 
                     const messageContentArray = msgFetched.content.split("modified")[1].split(/ +/g);
-                    let user = find_user(client, username);
 
-                    if (!user) {
 
-                        if (!unknownUsers[username]) {
-
-                            let Kazuhiro = client.users.find('id', '140033402681163776');
-
-                            Kazuhiro.send(`L'utilisateur ${username} est introuvable`).catch(console.error);
-                            unknownUsers[username] = true;
-
-                        }
-
-                    } else {
-
-                        if (!(user.id in stats)) {
-                            stats[user.id] = 0;
+                        if (!(username in stats)) {
+                            stats[username] = 0;
                         }
 
                         if (msgFetched.content.split("modified")[1].indexOf("other") !== -1) {
-                            stats[user.id] += 1 + parseInt(messageContentArray[messageContentArray.length - 3]);
+                            stats[username] += 1 + parseInt(messageContentArray[messageContentArray.length - 3]);
                         } else {
-                            stats[user.id] += 1;
+                            stats[username] += 1;
                         }
-                    }
                 }
             });
 
@@ -339,7 +316,7 @@ let analyseLogChan = async (client, channel) => {
         while (Object.keys(stats).length > 0) {
             let bestTranslatorId = findHighestTranslators(stats);
             if (bestTranslatorId !== undefined) {
-                let translator = client.users.find("id", bestTranslatorId);
+                let translator = bestTranslatorId;
 
                 if (i === 25) {
                     channel.send(messageEmbed).catch(console.error);
@@ -347,7 +324,7 @@ let analyseLogChan = async (client, channel) => {
                     i = 0;
                 }
                 messageEmbed
-                    .addField(`${rank} - **${translator.username}**`, `${stats[bestTranslatorId]} répliques modfiées`);
+                    .addField(`${rank} - **${translator}**`, `${stats[bestTranslatorId]} répliques modfiées`);
                 i += 1;
                 rank += 1;
             }

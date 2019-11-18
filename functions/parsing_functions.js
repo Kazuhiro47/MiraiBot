@@ -222,30 +222,46 @@ module.exports = {
     check_xp: async (client, message) => {
 
         if (message.author.id !== bot_data.bot_values.bot_id && message.member && message.author.bot === false) {
-            let memberXPData = client.memberXP.get(message.author.id);
 
-            if (!memberXPData) {
-                client.memberXP.set(message.author.id, new MemberUserXP(message.author.id));
-                memberXPData = client.memberXP.get(message.author.id);
+            const memberId = message.member.id;
+            const content = message.content;
+            const timestamp = message.createdAt.toISOString().slice(0, 19).replace('T', ' ');
+
+            client.db.query(
+                'INSERT INTO mirai_team_log.server_log (message_id, channel_id, member_id, content, timestamp) VALUES (?, ?, ?, ?, ?)',
+                [message.id, message.channel.id, memberId, content, timestamp, ]
+            ).catch(console.error);
+
+            let memberSQLObj = await client.db.query(
+                'SELECT * FROM mirai_team_log.server_member WHERE member_id = ?', [message.member.id]
+            );
+
+            if (memberSQLObj.length === 0) {
+                memberSQLObj = await client.db.query(
+                    'INSERT INTO mirai_team_log.server_member (member_id, avatarURL, name) VALUES (?, ?, ?)',
+                    [message.member.id, message.author.avatarUrl, message.author.username]
+                );
             }
 
-            memberXPData.xp += message.content.length / 10;
+            memberSQLObj = memberSQLObj[0];
 
-            let palier_reached = getUserDivision(memberXPData.xp);
+            memberSQLObj.xp += message.cleanContent.length / 10;
 
-            if (palier_reached.level > memberXPData.level) {
-                memberXPData.level += 1;
+            let palier_reached = getUserDivision(memberSQLObj.xp);
+
+            if (palier_reached.level > memberSQLObj.division) {
+                memberSQLObj.division = palier_reached.level;
 
                 message.channel.send(new RichEmbed()
                     .addField(
-                        `**${message.author.username}** est passé à la **Division ${bot_data.xp_table[memberXPData.level].string}**`,
-                        `*${bot_data.xp_table[memberXPData.level].description}*`)
+                        `**${message.author.username}** est passé à la **Division ${bot_data.xp_table[memberSQLObj.division].string}**`,
+                        `*${bot_data.xp_table[memberSQLObj.division].description}*`)
                     .setColor(message.guild.me.displayColor)
                 ).catch(console.error);
 
                 message.guild.roles.array().forEach(role => {
 
-                    if (role.name.split(' ')[1] === bot_data.xp_table[memberXPData.level].string) {
+                    if (role.name.split(' ')[1] === bot_data.xp_table[memberSQLObj.division].string) {
                         if (message.member) {
                             message.member.addRole(role).catch(err => {
                                 console.error(err);
@@ -258,8 +274,8 @@ module.exports = {
 
                 });
 
-            } else if (palier_reached.level < memberXPData.level) {
-                memberXPData.level = palier_reached.level;
+            } else if (palier_reached.level < memberSQLObj.division) {
+                memberSQLObj.division = palier_reached.level;
                 message.guild.roles.array().forEach(role => {
 
                     if (role.name.split(' ')[1] === bot_data.xp_table[palier_reached.level].string) {
@@ -300,7 +316,7 @@ module.exports = {
 
                 let xpTableArray = Object.keys(bot_data.xp_table);
 
-                for (let i = 0 ; i < xpTableArray.length && i < memberXPData.level ; i++) {
+                for (let i = 0 ; i < xpTableArray.length && i < memberSQLObj.division ; i++) {
                     let correctRole = await findCorrectRole(bot_data.xp_table[i + 1].string, message);
 
                     if (message.member) {
@@ -312,7 +328,10 @@ module.exports = {
 
             }
 
-            client.memberXP.set(message.author.id, memberXPData);
+            await client.db.query(
+                'UPDATE mirai_team_log.server_member SET xp = ?, division = ? WHERE member_id = ?',
+                [memberSQLObj.xp, memberSQLObj.division, message.member.id]
+            );
         }
 
     },

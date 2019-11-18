@@ -11,29 +11,26 @@ let initTwitterListener = (channel, kazuhiro) => {
         access_token_secret: bot_data.twitter_api.access_token_secret
     });
 
-    client.stream('statuses/filter', {track: 'danganronpa'},  function(stream) {
-        stream.on('data', function(tweet) {
+    client.stream('statuses/filter', {follow: '1613658894'}, function (stream) {
+        stream.on('data', function (tweet) {
 
-            if (tweet.user.screen_name === "danganronpawiki") {
+            let msg = new RichEmbed()
+                .setAuthor(tweet.user.name, tweet.user.profile_image_url)
+                .setDescription(tweet.text)
+                .setFooter(tweet.created_at)
+                .setColor(bot_data.bot_values.bot_color);
 
-                let msg = new RichEmbed()
-                    .setAuthor(tweet.user.name, tweet.user.profile_image_url)
-                    .setDescription(tweet.text)
-                    .setFooter(tweet.created_at)
-                    .setColor(bot_data.bot_values.bot_color);
-
-                if ("media" in tweet.entities) {
-                    tweet.entities.media.forEach(media => {
-                        msg.setImage(media.media_url);
-                    });
-                }
-
-                channel.send(msg).catch(console.error);
+            if ("media" in tweet.entities) {
+                tweet.entities.media.forEach(media => {
+                    msg.setImage(media.media_url);
+                });
             }
+
+            channel.send(msg).catch(console.error);
 
         });
 
-        stream.on('error', function(error) {
+        stream.on('error', function (error) {
             console.error(error);
         });
     });
